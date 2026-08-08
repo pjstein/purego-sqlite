@@ -1,0 +1,4 @@
+build/upstream/
+*.db
+*.db-wal
+*.db-shm

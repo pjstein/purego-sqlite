@@ -1,0 +1,19 @@
+# The upstream SQLite amalgamation this repository compiles and ships.
+#
+# Nothing here is Apple's libsqlite3. The system library on macOS is a fork on a
+# floating version compiled SQLITE_THREADSAFE=1 (serialized), and its version
+# changes underneath us with OS updates. We pin, we compile, we ship.
+#
+# To re-pin: edit these four values, run `make fetch build`, commit the new dylib.
+
+SQLITE_VERSION=3.53.4
+SQLITE_YEAR=2026
+SQLITE_ZIP=sqlite-amalgamation-3530400.zip
+SQLITE_URL=https://sqlite.org/2026/sqlite-amalgamation-3530400.zip
+
+# SHA256 computed locally at pin time (2026-08-08).
+SQLITE_SHA256=1e71ddf93849c6a6ecf58b827c0692073d2dd7ee40196158068f7b29f422e87d
+
+# SHA3-256 as published by sqlite.org's own download manifest, which is the
+# integrity claim upstream actually makes. Verified equal at pin time.
+SQLITE_SHA3_256=628a44cfe82c66aed1ccbbe85a562d2e33ebe64b3288981ed76285612227934e
