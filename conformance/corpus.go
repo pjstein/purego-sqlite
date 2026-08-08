@@ -153,7 +153,28 @@ func Exprs() []Expr {
 		{"collate-nocase", `SELECT 'ABC' = 'abc' COLLATE NOCASE`, "1"},
 		{"typeof-blob", `SELECT typeof(x'00')`, "blob"},
 		{"empty-blob-not-null", `SELECT typeof(zeroblob(0))`, "blob"},
-		{"math-functions", `SELECT CAST(pow(2,10) AS INTEGER)`, "1024"},
-		{"fts5-available", `SELECT sqlite_compileoption_used('SQLITE_ENABLE_FTS5')`, "1"},
+	}
+}
+
+// Capability is a probe whose answer legitimately differs between SQLite
+// builds: which optional modules are compiled in, which threading mode, which
+// version. These are reported rather than asserted -- a build without FTS5 is
+// a different build, not a wrong one -- and the differences are exactly what a
+// comparison between implementations needs to surface.
+type Capability struct {
+	Name string
+	SQL  string
+}
+
+// Capabilities is the build-configuration probe set.
+func Capabilities() []Capability {
+	return []Capability{
+		{"sqlite-version", `SELECT sqlite_version()`},
+		{"threading-mode", `SELECT coalesce((SELECT compile_options FROM pragma_compile_options WHERE compile_options LIKE 'THREADSAFE=%'), 'unreported')`},
+		{"fts5", `SELECT sqlite_compileoption_used('SQLITE_ENABLE_FTS5')`},
+		{"stat4", `SELECT sqlite_compileoption_used('SQLITE_ENABLE_STAT4')`},
+		{"math-functions", `SELECT sqlite_compileoption_used('SQLITE_ENABLE_MATH_FUNCTIONS')`},
+		{"double-quoted-strings-rejected", `SELECT sqlite_compileoption_used('SQLITE_DQS=0')`},
+		{"compile-options-reported", `SELECT count(*) FROM pragma_compile_options`},
 	}
 }
