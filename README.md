@@ -19,7 +19,7 @@ What that buys:
 What it costs, stated plainly:
 
 - **A per-call foreign-function overhead that cgo does not pay.** A call through purego costs about 65ns against cgo's 20ns on this machine, and — the part that matters more under concurrency — one 208-byte heap allocation that cgo does not make. How much that costs you depends entirely on how many calls per unit of work you make; see "Row batching" below and the benchmarks in `bench/`.
-- **A bounded binding surface.** Roughly sixty functions, listed in `library.go`. Anything outside that surface does not exist until someone adds it.
+- **A bounded binding surface.** 55 SQLite entry points, listed in `library.go`, plus two for the optional row-batching shim. Anything outside that surface does not exist until someone adds it.
 - **A platform matrix this repository maintains by hand.** Today: darwin/arm64.
 
 ## Using it
@@ -94,7 +94,7 @@ Parameter indexes are 1-based and column indexes are 0-based, because that is wh
 
 Reading a four-column row through SQLite's C API takes seven calls: one step, one accessor per column, and a second call per text or blob column to learn its length. That is free through cgo and expensive through purego.
 
-So the library this repository compiles also carries a small shim (`build/shim.c`, about forty lines) that does a whole row inside C and returns once. It adds no SQLite behaviour — it calls the same public API in the same order — and it collapses seven crossings per row into one. Measured on the read path here, that is 2.9× faster and cuts allocations per 64-row page from 1158 to 263, which brings the binding within about 3% of a cgo binding making the same single call per row.
+So the library this repository compiles also carries a small shim (`build/shim.c`) that does a whole row inside C and returns once. It adds no SQLite behaviour — it calls the same public API in the same order — and it collapses seven crossings per row into one. Measured on the read path here, that is 2.9× faster and cuts allocations per 64-row page from 1158 to 263, which brings the binding within about 3% of a cgo binding making the same single call per row.
 
 Two properties make it safe to rely on:
 
