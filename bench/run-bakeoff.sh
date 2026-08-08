@@ -41,9 +41,15 @@ stamp() { date -u +%Y%m%dT%H%M%SZ; }
 # is left of the disk, and interleaving does not save you from a contaminant
 # that lasts longer than a whole round. So: wait, up to a bound, then proceed
 # and say loudly that it did not settle.
-QUIET_LOAD="${QUIET_LOAD:-6.0}"
+# The thresholds are empirical, not aspirational. This machine's idle baseline
+# with the other agent lanes present is a load average around 6-8, and rounds
+# measured at that baseline reproduced to within 2% of each other. What ruins a
+# round is a compiler storm (load above 20) or a disk-scanning backup, so those
+# are what the gate waits out. A stricter bar would wait forever and measure
+# nothing.
+QUIET_LOAD="${QUIET_LOAD:-9.0}"
 QUIET_HOG="${QUIET_HOG:-50}"
-QUIET_WAIT_SECS="${QUIET_WAIT_SECS:-1800}"
+QUIET_WAIT_SECS="${QUIET_WAIT_SECS:-3600}"
 
 machine_offenders() {
   # Build tools matched on process NAME, not command line: Chrome and VS Code
