@@ -13,6 +13,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"math"
 	"math/rand/v2"
 	"os"
 	"path/filepath"
@@ -32,7 +33,7 @@ var (
 	duration  = flag.Duration("duration", 30*time.Second, "measured duration of each run")
 	warmup    = flag.Duration("warmup", 3*time.Second, "unmeasured warmup before each run")
 	readers   = flag.Int("readers", 8, "number of subscriber-shaped readers")
-	runs      = flag.Int("runs", 3, "runs per driver")
+	rounds    = flag.Int("rounds", 5, "measured rounds; every driver runs once per round, in round-robin order")
 	seedRows  = flag.Int("seed", 200000, "events pre-seeded into the log before each run")
 	only      = flag.String("only", "", "substring filter on driver name")
 	jsonOut   = flag.String("json", "", "also write results as JSON to this path")
@@ -43,7 +44,7 @@ var (
 // RunResult is one driver's numbers for one run.
 type RunResult struct {
 	Driver          string    `json:"driver"`
-	Run             int       `json:"run"`
+	Round           int       `json:"round"`
 	Seconds         float64   `json:"seconds"`
 	WriteRateTarget int64     `json:"write_rate_target"`
 	Appends         int64     `json:"appends"`
@@ -59,27 +60,89 @@ type RunResult struct {
 	LatencyP50Us    float64   `json:"latency_p50_us"`
 	LatencyP99Us    float64   `json:"latency_p99_us"`
 	LatencyP999Us   float64   `json:"latency_p999_us"`
+	LatencySamples  int       `json:"latency_samples"`
 	Errors          []string  `json:"errors,omitempty"`
 	StartedAt       time.Time `json:"started_at"`
 }
 
 type Report struct {
-	Machine      map[string]string   `json:"machine"`
-	Config       map[string]any      `json:"config"`
-	Capabilities []map[string]string `json:"capabilities"`
-	Results      []RunResult         `json:"results"`
+	Invocation   string                 `json:"invocation"`
+	Machine      map[string]string      `json:"machine"`
+	Config       map[string]any         `json:"config"`
+	Capabilities []map[string]string    `json:"capabilities"`
+	RoundStates  []bakeoff.MachineState `json:"round_states"`
+	Results      []RunResult            `json:"results"`
+}
+
+// Stat summarises one metric across rounds. A single run is an anecdote; the
+// spread is what says whether the difference between two drivers is real.
+type Stat struct {
+	Mean   float64   `json:"mean"`
+	StdDev float64   `json:"stddev"`
+	Min    float64   `json:"min"`
+	Max    float64   `json:"max"`
+	N      int       `json:"n"`
+	Values []float64 `json:"values"`
+}
+
+func summarise(values []float64) Stat {
+	st := Stat{N: len(values), Values: append([]float64(nil), values...)}
+	if st.N == 0 {
+		return st
+	}
+	sum := 0.0
+	st.Min, st.Max = values[0], values[0]
+	for _, v := range values {
+		sum += v
+		if v < st.Min {
+			st.Min = v
+		}
+		if v > st.Max {
+			st.Max = v
+		}
+	}
+	st.Mean = sum / float64(st.N)
+	if st.N > 1 {
+		ss := 0.0
+		for _, v := range values {
+			d := v - st.Mean
+			ss += d * d
+		}
+		st.StdDev = math.Sqrt(ss / float64(st.N-1)) // sample stddev
+	}
+	return st
+}
+
+// RelSD is the standard deviation as a fraction of the mean. Above 0.10 the
+// directive says stop and look rather than conclude.
+func (s Stat) RelSD() float64 {
+	if s.Mean == 0 {
+		return 0
+	}
+	return s.StdDev / s.Mean
+}
+
+func (s Stat) Format(unit string) string {
+	flag := ""
+	if s.RelSD() > 0.10 {
+		flag = " !"
+	}
+	return fmt.Sprintf("%.0f +/- %.0f %s (min %.0f, max %.0f, n=%d)%s", s.Mean, s.StdDev, unit, s.Min, s.Max, s.N, flag)
 }
 
 func main() {
 	flag.Parse()
 
+	invocation := strings.Join(os.Args, " ")
+
 	report := Report{
-		Machine: machineFacts(),
+		Invocation: invocation,
+		Machine:    machineFacts(),
 		Config: map[string]any{
 			"duration":     duration.String(),
 			"warmup":       warmup.String(),
 			"readers":      *readers,
-			"runs":         *runs,
+			"rounds":       *rounds,
 			"seed_rows":    *seedRows,
 			"payload_size": bakeoff.DefaultPayloadSize,
 			"tail_limit":   bakeoff.TailLimit,
@@ -87,10 +150,14 @@ func main() {
 			"pragmas":      bakeoff.Pragmas,
 			"append_sql":   bakeoff.AppendSQL,
 			"tail_sql":     bakeoff.TailSQL,
+			"batch_env":    os.Getenv("PUREGO_SQLITE_BATCH"),
 		},
 	}
 
-	fmt.Println("== machine and toolchain")
+	fmt.Println("== invocation (re-run this verbatim to reproduce)")
+	fmt.Printf("   PUREGO_SQLITE_BATCH=%q %s\n", os.Getenv("PUREGO_SQLITE_BATCH"), invocation)
+
+	fmt.Println("\n== machine and toolchain")
 	for _, k := range sortedKeys(report.Machine) {
 		fmt.Printf("   %-18s %s\n", k, report.Machine[k])
 	}
@@ -100,29 +167,47 @@ func main() {
 		fmt.Fprintf(os.Stderr, "no drivers matched %q\n", *only)
 		os.Exit(1)
 	}
+	fmt.Printf("\n== %d drivers under test, interleaved: every round runs each once, in this order\n", len(drivers))
+	for i, d := range drivers {
+		fmt.Printf("   %d. %s\n", i+1, d.Name())
+	}
 
 	fmt.Println("\n== build capabilities (reported, not asserted: a build without FTS5 is a different build, not a wrong one)")
 	report.Capabilities = probeCapabilities(drivers)
 	printCapabilities(report.Capabilities)
 
-	fmt.Printf("\n== workload: 1 writer + %d readers, %s per run, %d runs, %d events pre-seeded\n",
-		*readers, *duration, *runs, *seedRows)
+	fmt.Printf("\n== workload: 1 writer + %d readers, %s measured per run after %s warmup, %d rounds, %d events pre-seeded\n",
+		*readers, *duration, *warmup, *rounds, *seedRows)
+	if *writeRate > 0 {
+		fmt.Printf("   writer capped at %d appends/s so readers are compared under identical write pressure\n", *writeRate)
+	} else {
+		fmt.Println("   writer unthrottled: each driver picks its own write rate, so reader numbers are NOT comparable across drivers")
+	}
 	fmt.Printf("   append: %s\n   tail:   %s\n", bakeoff.AppendSQL, bakeoff.TailSQL)
 
-	for _, d := range drivers {
-		for run := 1; run <= *runs; run++ {
-			res, err := runOne(d, run)
+	// Round-robin rather than all-of-A-then-all-of-B. Thermal drift, page
+	// cache warmth and whatever else the machine is doing move slowly; running
+	// a driver's rounds consecutively would fold that drift into that driver's
+	// numbers and nobody else's.
+	for round := 1; round <= *rounds; round++ {
+		state := bakeoff.CaptureMachineState()
+		report.RoundStates = append(report.RoundStates, state)
+		fmt.Printf("\n########## ROUND %d/%d\n   machine: %s\n", round, *rounds, state)
+
+		for _, d := range drivers {
+			res, err := runOne(d, round)
 			if err != nil {
-				fmt.Fprintf(os.Stderr, "%s run %d: %v\n", d.Name(), run, err)
-				continue
+				fmt.Fprintf(os.Stderr, "%s round %d: %v\n", d.Name(), round, err)
+				os.Exit(1)
 			}
 			report.Results = append(report.Results, res)
 			printRun(res)
 		}
 	}
 
-	fmt.Println("\n== summary (median run per driver)")
-	printSummary(report.Results)
+	fmt.Printf("\n== summary over %d rounds: mean +/- sample stddev (min, max, n)\n", *rounds)
+	fmt.Println("   a trailing ! marks a metric whose stddev exceeds 10% of its mean")
+	printSummary(report.Results, *rounds)
 
 	if *jsonOut != "" {
 		b, err := json.MarshalIndent(report, "", "  ")
@@ -275,7 +360,7 @@ func seed(path string, rows int) error {
 	return db.Exec(`PRAGMA wal_checkpoint(TRUNCATE)`)
 }
 
-func runOne(d bakeoff.Driver, run int) (RunResult, error) {
+func runOne(d bakeoff.Driver, round int) (RunResult, error) {
 	dir, err := os.MkdirTemp("", "bakeoff-run-")
 	if err != nil {
 		return RunResult{}, err
@@ -287,7 +372,7 @@ func runOne(d bakeoff.Driver, run int) (RunResult, error) {
 		return RunResult{}, fmt.Errorf("seeding: %w", err)
 	}
 
-	res := RunResult{Driver: d.Name(), Run: run, StartedAt: time.Now()}
+	res := RunResult{Driver: d.Name(), Round: round, StartedAt: time.Now()}
 
 	var (
 		stop        = make(chan struct{})
@@ -502,6 +587,19 @@ func runOne(d bakeoff.Driver, run int) (RunResult, error) {
 	res.LatencyP50Us = percentileUs(all, 0.50)
 	res.LatencyP99Us = percentileUs(all, 0.99)
 	res.LatencyP999Us = percentileUs(all, 0.999)
+	res.LatencySamples = len(all)
+
+	// A run that read nothing is a failed run, not a fast one. Assertions that
+	// can pass without subjects are worse than no assertions.
+	if res.LatencySamples == 0 {
+		return res, fmt.Errorf("%s round %d: no latency samples -- readers did no measured work", d.Name(), round)
+	}
+	if sumInt64(res.ReaderRows) == 0 {
+		return res, fmt.Errorf("%s round %d: readers returned zero rows -- the workload measured nothing", d.Name(), round)
+	}
+	if res.Appends == 0 {
+		return res, fmt.Errorf("%s round %d: writer committed nothing", d.Name(), round)
+	}
 
 	return res, nil
 }
@@ -529,18 +627,29 @@ func percentileUs(sorted []time.Duration, p float64) float64 {
 }
 
 func printRun(r RunResult) {
-	fmt.Printf("\n-- %s  run %d  (%.1fs)\n", r.Driver, r.Run, r.Seconds)
-	fmt.Printf("   writer      %10.0f appends/s  (%d total)\n", r.AppendsPerSec, r.Appends)
+	fmt.Printf("\n-- %s  round %d  (%.1fs measured)\n", r.Driver, r.Round, r.Seconds)
+	fmt.Printf("   writer      %10.0f appends/s  (%d appends committed)\n", r.AppendsPerSec, r.Appends)
 	fmt.Printf("   readers     min %8.0f   median %8.0f   max %8.0f  polls/s   (max/min %.2f)\n",
 		r.PollsPerSecMin, r.PollsPerSecMed, r.PollsPerSecMax, r.FairnessRatio)
-	fmt.Printf("   aggregate   %10.0f polls/s   %12.0f rows/s\n", r.PollsPerSecAgg, r.RowsPerSecAgg)
-	fmt.Printf("   latency     p50 %7.1fus   p99 %8.1fus   p99.9 %9.1fus\n", r.LatencyP50Us, r.LatencyP99Us, r.LatencyP999Us)
+	fmt.Printf("   aggregate   %10.0f polls/s   %12.0f rows/s   over %d readers\n", r.PollsPerSecAgg, r.RowsPerSecAgg, len(r.ReaderPolls))
+	fmt.Printf("   latency     p50 %7.1fus   p99 %8.1fus   p99.9 %9.1fus   (%d samples)\n",
+		r.LatencyP50Us, r.LatencyP99Us, r.LatencyP999Us, r.LatencySamples)
+	fmt.Printf("   subjects    %d reader polls, %d rows read -- a run with zero of either is a failed run, not a fast one\n",
+		sumInt64(r.ReaderPolls), sumInt64(r.ReaderRows))
 	for _, e := range r.Errors {
 		fmt.Printf("   ERROR       %s\n", e)
 	}
 }
 
-func printSummary(results []RunResult) {
+func sumInt64(v []int64) int64 {
+	var t int64
+	for _, x := range v {
+		t += x
+	}
+	return t
+}
+
+func printSummary(results []RunResult, wantRounds int) {
 	byDriver := map[string][]RunResult{}
 	var order []string
 	for _, r := range results {
@@ -550,14 +659,61 @@ func printSummary(results []RunResult) {
 		byDriver[r.Driver] = append(byDriver[r.Driver], r)
 	}
 
-	fmt.Printf("   %-34s %12s %12s %12s %10s %10s %10s\n",
-		"driver", "appends/s", "min polls/s", "med polls/s", "max/min", "p99 us", "rows/s")
 	for _, name := range order {
 		rs := byDriver[name]
-		sort.Slice(rs, func(i, j int) bool { return rs[i].PollsPerSecMed < rs[j].PollsPerSecMed })
-		m := rs[len(rs)/2]
-		fmt.Printf("   %-34s %12.0f %12.0f %12.0f %10.2f %10.1f %10.0f\n",
-			name, m.AppendsPerSec, m.PollsPerSecMin, m.PollsPerSecMed, m.FairnessRatio, m.LatencyP99Us, m.RowsPerSecAgg)
+		pick := func(f func(RunResult) float64) Stat {
+			v := make([]float64, 0, len(rs))
+			for _, r := range rs {
+				v = append(v, f(r))
+			}
+			return summarise(v)
+		}
+		appends := pick(func(r RunResult) float64 { return r.AppendsPerSec })
+		minPolls := pick(func(r RunResult) float64 { return r.PollsPerSecMin })
+		medPolls := pick(func(r RunResult) float64 { return r.PollsPerSecMed })
+		fairness := pick(func(r RunResult) float64 { return r.FairnessRatio })
+		p50 := pick(func(r RunResult) float64 { return r.LatencyP50Us })
+		p99 := pick(func(r RunResult) float64 { return r.LatencyP99Us })
+		rows := pick(func(r RunResult) float64 { return r.RowsPerSecAgg })
+
+		fmt.Printf("\n   %s\n", name)
+		if len(rs) != wantRounds {
+			fmt.Printf("      INCOMPLETE: %d rounds recorded, %d expected\n", len(rs), wantRounds)
+		}
+		fmt.Printf("      appends/s        %s\n", appends.Format(""))
+		fmt.Printf("      min polls/s      %s\n", minPolls.Format(""))
+		fmt.Printf("      median polls/s   %s\n", medPolls.Format(""))
+		fmt.Printf("      rows/s aggregate %s\n", rows.Format(""))
+		fmt.Printf("      fairness max/min %.3f +/- %.3f (min %.3f, max %.3f)\n", fairness.Mean, fairness.StdDev, fairness.Min, fairness.Max)
+		fmt.Printf("      p50 latency      %s us\n", p50.Format(""))
+		fmt.Printf("      p99 latency      %s us\n", p99.Format(""))
+		var errs int
+		for _, r := range rs {
+			errs += len(r.Errors)
+		}
+		fmt.Printf("      errors           %d\n", errs)
+		if medPolls.RelSD() > 0.10 {
+			fmt.Printf("      ** median polls/s stddev is %.1f%% of mean -- above the 10%% bar; do not conclude from this without investigating\n", medPolls.RelSD()*100)
+		}
+	}
+
+	fmt.Printf("\n   one-line table (mean median-polls/s +/- stddev)\n")
+	fmt.Printf("   %-36s %14s %16s %16s %12s\n", "driver", "appends/s", "min polls/s", "med polls/s", "p99 us")
+	for _, name := range order {
+		rs := byDriver[name]
+		pick := func(f func(RunResult) float64) Stat {
+			v := make([]float64, 0, len(rs))
+			for _, r := range rs {
+				v = append(v, f(r))
+			}
+			return summarise(v)
+		}
+		a := pick(func(r RunResult) float64 { return r.AppendsPerSec })
+		mn := pick(func(r RunResult) float64 { return r.PollsPerSecMin })
+		md := pick(func(r RunResult) float64 { return r.PollsPerSecMed })
+		p9 := pick(func(r RunResult) float64 { return r.LatencyP99Us })
+		fmt.Printf("   %-36s %7.0f+/-%-5.0f %8.0f+/-%-6.0f %8.0f+/-%-6.0f %6.0f+/-%-4.0f\n",
+			name, a.Mean, a.StdDev, mn.Mean, mn.StdDev, md.Mean, md.StdDev, p9.Mean, p9.StdDev)
 	}
 }
 
