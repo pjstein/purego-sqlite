@@ -14,9 +14,10 @@ fetch:
 build: fetch
 	@build/build-$(shell go env GOOS)-$(shell go env GOARCH).sh
 
-## test: run the package suite against the shipped library
+## test: run the package suite on both read paths, batched and per-call
 test:
 	go test ./...
+	PUREGO_SQLITE_BATCH=0 go test ./...
 
 ## bench: run the three-way bake-off (separate module under bench/)
 bench:

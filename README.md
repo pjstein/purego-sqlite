@@ -18,7 +18,7 @@ What that buys:
 
 What it costs, stated plainly:
 
-- **A per-call foreign-function overhead that cgo does not pay.** How much depends on the call rate; measure it for your workload before deciding it does not matter. There are benchmarks in `bench/`.
+- **A per-call foreign-function overhead that cgo does not pay.** A call through purego costs about 65ns against cgo's 20ns on this machine, and — the part that matters more under concurrency — one 208-byte heap allocation that cgo does not make. How much that costs you depends entirely on how many calls per unit of work you make; see "Row batching" below and the benchmarks in `bench/`.
 - **A bounded binding surface.** Roughly sixty functions, listed in `library.go`. Anything outside that surface does not exist until someone adds it.
 - **A platform matrix this repository maintains by hand.** Today: darwin/arm64.
 
@@ -90,6 +90,24 @@ if errors.Is(err, sqlite3.ConstraintUnique) { /* already have it */ }
 
 Parameter indexes are 1-based and column indexes are 0-based, because that is what SQLite's documentation says. Translating one of them here would only mean translating it back to read the docs.
 
+## Row batching
+
+Reading a four-column row through SQLite's C API takes seven calls: one step, one accessor per column, and a second call per text or blob column to learn its length. That is free through cgo and expensive through purego.
+
+So the library this repository compiles also carries a small shim (`build/shim.c`, about forty lines) that does a whole row inside C and returns once. It adds no SQLite behaviour — it calls the same public API in the same order — and it collapses seven crossings per row into one. Measured on the read path here, that is 2.9× faster and cuts allocations per 64-row page from 1158 to 263, which brings the binding within about 3% of a cgo binding making the same single call per row.
+
+Two properties make it safe to rely on:
+
+- **It is optional.** The binding looks the symbol up at load and falls back to per-call accessors when it is absent, so pointing the package at a stock system libsqlite3 still works correctly — only slower. `RowBatchingActive` reports which path is in use.
+- **It never converts.** The shim returns each value in the representation SQLite stored it as. Ask for a column as some other type and the binding goes back to SQLite for the answer, because SQLite's conversion rules are its own and reimplementing them in Go would be a source of quiet disagreement.
+
+The suite runs on both paths, and an internal test reads the same rows both ways and requires every reading to be identical:
+
+```
+go test ./...
+PUREGO_SQLITE_BATCH=0 go test ./...
+```
+
 ## Concurrency
 
 The shipped library is compiled `SQLITE_THREADSAFE=2` (multi-thread), and this package inherits exactly that contract:
@@ -136,6 +154,8 @@ To move to a new SQLite: edit the four values in `sqlite-version.lock`, run `mak
 ## Tests
 
 `go test ./...` covers the binding surface against the real library: round-trips of every scalar type, WAL mode and checkpointing, concurrent readers under a sustained writer, busy-timeout behaviour at sub-second resolution, the online backup API, and the error paths including extended result codes.
+
+The suite must be run both ways — plain, and with `PUREGO_SQLITE_BATCH=0` — because the batched and per-call read paths are different code. `TestRowBatchingIsActive` fails rather than skips if the shipped library has lost its shim, so the fast path cannot quietly go untested.
 
 `conformance/` is a shared corpus with no dependency on the binding: values that must round-trip byte-for-byte (embedded NUL, real newlines, astral-plane characters, invalid UTF-8, all 256 byte values) and SQL expressions whose results every implementation must agree on. The bake-off under `bench/` runs the same corpus through competing drivers, which is what makes "they agree" a checkable claim rather than an assumption.
 

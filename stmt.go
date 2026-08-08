@@ -19,6 +19,12 @@ type Stmt struct {
 	sql    string
 	ncol   int32
 	sawRow bool
+
+	// Filled by the row-batching shim when the loaded library has it: the
+	// whole row arrives in one foreign call and the column accessors read it
+	// without crossing the boundary again.
+	rowBuf      []colValue
+	rowBuffered bool
 }
 
 var errStmtClosed = errors.New("sqlite3: statement is closed")
@@ -76,7 +82,19 @@ func (s *Stmt) Step() (bool, error) {
 	if err := s.check(); err != nil {
 		return false, err
 	}
-	rc := cStep(s.stmt)
+	s.rowBuffered = false
+
+	var rc Code
+	if batchEnabled {
+		if s.rowBuf == nil {
+			// Column count is available as soon as the statement is compiled.
+			s.rowBuf = make([]colValue, max(cColumnCount(s.stmt), 1))
+		}
+		rc = cStepRow(s.stmt, s.rowBuf)
+	} else {
+		rc = cStep(s.stmt)
+	}
+
 	switch rc {
 	case Row:
 		if !s.sawRow {
@@ -84,10 +102,12 @@ func (s *Stmt) Step() (bool, error) {
 			// statement silently recompiles itself after a schema change, and
 			// the new program may have a different shape. Reading it once per
 			// execution keeps the bounds checks honest without paying a call
-			// per accessor.
+			// per accessor. A row wider than the buffer is served by falling
+			// back to SQLite for the columns past its end.
 			s.sawRow = true
 			s.ncol = cColumnCount(s.stmt)
 		}
+		s.rowBuffered = batchEnabled
 		return true, nil
 	case Done:
 		return false, nil
@@ -122,6 +142,7 @@ func (s *Stmt) Reset() error {
 		return err
 	}
 	s.sawRow = false
+	s.rowBuffered = false
 	rc := cReset(s.stmt)
 	return s.err(rc)
 }
@@ -368,6 +389,9 @@ func (s *Stmt) ColumnType(i int) ColumnType {
 	if !s.inRow(i) {
 		return TypeNull
 	}
+	if s.buffered(i) {
+		return ColumnType(s.rowBuf[i].typ)
+	}
 	return cColumnType(s.stmt, int32(i))
 }
 
@@ -378,6 +402,12 @@ func (s *Stmt) ColumnIsNull(i int) bool { return s.ColumnType(i) == TypeNull }
 func (s *Stmt) ColumnInt64(i int) int64 {
 	if !s.inRow(i) {
 		return 0
+	}
+	// Served from the buffer only when the stored value is already an
+	// integer. Anything else goes back to SQLite, whose conversion rules for
+	// text and floats are its own and are not worth reimplementing in Go.
+	if s.buffered(i) && s.rowBuf[i].typ == int32(TypeInteger) {
+		return s.rowBuf[i].ival
 	}
 	return cColumnInt64(s.stmt, int32(i))
 }
@@ -393,6 +423,9 @@ func (s *Stmt) ColumnFloat(i int) float64 {
 	if !s.inRow(i) {
 		return 0
 	}
+	if s.buffered(i) && s.rowBuf[i].typ == int32(TypeFloat) {
+		return s.rowBuf[i].fval
+	}
 	return lib.columnDouble(s.stmt, int32(i))
 }
 
@@ -402,6 +435,16 @@ func (s *Stmt) ColumnFloat(i int) float64 {
 func (s *Stmt) ColumnText(i int) string {
 	if !s.inRow(i) {
 		return ""
+	}
+	if s.buffered(i) {
+		switch ColumnType(s.rowBuf[i].typ) {
+		case TypeText:
+			return string(cBytes(s.rowBuf[i].ptr, s.rowBuf[i].len))
+		case TypeNull:
+			return ""
+		}
+		// An integer, float, or blob read as text needs SQLite's own
+		// rendering, so fall through to the direct call.
 	}
 	// Order matters: the pointer must be fetched before the length, because
 	// fetching the pointer can convert the value and change its length.
@@ -415,6 +458,16 @@ func (s *Stmt) ColumnText(i int) string {
 func (s *Stmt) ColumnBlob(i int) []byte {
 	if !s.inRow(i) {
 		return nil
+	}
+	if s.buffered(i) {
+		switch ColumnType(s.rowBuf[i].typ) {
+		case TypeBlob:
+			out := make([]byte, s.rowBuf[i].len)
+			copy(out, cBytes(s.rowBuf[i].ptr, s.rowBuf[i].len))
+			return out
+		case TypeNull:
+			return nil
+		}
 	}
 	if cColumnType(s.stmt, int32(i)) == TypeNull {
 		return nil
@@ -431,6 +484,14 @@ func (s *Stmt) ColumnBytes(i int) int {
 	if !s.inRow(i) {
 		return 0
 	}
+	if s.buffered(i) {
+		switch ColumnType(s.rowBuf[i].typ) {
+		case TypeText, TypeBlob:
+			return int(s.rowBuf[i].len)
+		case TypeNull:
+			return 0
+		}
+	}
 	return int(cColumnBytes(s.stmt, int32(i)))
 }
 
@@ -445,6 +506,14 @@ func (s *Stmt) ColumnRawBlob(i int) []byte {
 	if !s.inRow(i) {
 		return nil
 	}
+	if s.buffered(i) {
+		switch ColumnType(s.rowBuf[i].typ) {
+		case TypeBlob:
+			return cBytes(s.rowBuf[i].ptr, s.rowBuf[i].len)
+		case TypeNull:
+			return nil
+		}
+	}
 	p := cColumnBlobPtr(s.stmt, int32(i))
 	n := cColumnBytes(s.stmt, int32(i))
 	return cBytes(p, n)
@@ -455,6 +524,14 @@ func (s *Stmt) ColumnRawBlob(i int) []byte {
 func (s *Stmt) ColumnRawText(i int) []byte {
 	if !s.inRow(i) {
 		return nil
+	}
+	if s.buffered(i) {
+		switch ColumnType(s.rowBuf[i].typ) {
+		case TypeText:
+			return cBytes(s.rowBuf[i].ptr, s.rowBuf[i].len)
+		case TypeNull:
+			return nil
+		}
 	}
 	p := cColumnTextPtr(s.stmt, int32(i))
 	n := cColumnBytes(s.stmt, int32(i))

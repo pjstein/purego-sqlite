@@ -26,7 +26,11 @@ mkdir -p "$outdir"
 # produced on any macOS host new enough to build it.
 target=(-arch arm64 -mmacosx-version-min=13.0)
 
-echo "build: SQLite $SQLITE_VERSION -> $out"
+# build/shim.c is compiled in beside the amalgamation. It adds no SQLite
+# behaviour -- it calls the same public API in the same order -- and exists
+# only to let the Go binding fetch a whole row in one foreign call instead of
+# seven. The binding treats it as optional and works without it.
+echo "build: SQLite $SQLITE_VERSION + row-batching shim -> $out"
 cc "${target[@]}" \
   "${SQLITE_CFLAGS[@]}" \
   "${SQLITE_DEFINES[@]}" \
@@ -35,7 +39,8 @@ cc "${target[@]}" \
   -compatibility_version 1.0.0 \
   -current_version "${SQLITE_VERSION}" \
   -o "$out" \
-  "$srcdir/sqlite3.c"
+  "$srcdir/sqlite3.c" \
+  "$root/build/shim.c"
 
 # An unsigned dylib loads fine when this process wrote it, but ad-hoc signing
 # keeps it well-formed for anything that inspects signatures later.

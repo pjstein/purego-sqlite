@@ -282,6 +282,9 @@ func bindSymbols(h uintptr) (err error) {
 	lib.aErrcode = addr("sqlite3_errcode")
 	lib.aExtendedErrcode = addr("sqlite3_extended_errcode")
 
+	// Optional, and looked up after everything required has resolved.
+	bindRowBatch(h)
+
 	return nil
 }
 
