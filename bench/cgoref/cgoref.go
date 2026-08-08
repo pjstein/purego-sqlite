@@ -59,8 +59,8 @@ typedef struct {
   const void *ptr;
   int32_t len;
   int32_t type;
-} bbx_col;
-extern int bbx_step_row(sqlite3_stmt *, int, bbx_col *);
+} rowbatch_col;
+extern int rowbatch_step(sqlite3_stmt *, int, rowbatch_col *);
 */
 import "C"
 
@@ -228,8 +228,8 @@ func (s *Stmt) ColumnBlob(col int) []byte {
 	return C.GoBytes(p, n)
 }
 
-// Col mirrors the shim's bbx_col.
-type Col = C.bbx_col
+// Col mirrors the shim's rowbatch_col.
+type Col = C.rowbatch_col
 
 // NewRowBuffer allocates a row buffer for StepRow.
 func NewRowBuffer(ncol int) []Col { return make([]Col, ncol) }
@@ -237,14 +237,14 @@ func NewRowBuffer(ncol int) []Col { return make([]Col, ncol) }
 // StepRow steps the statement and, on a row, fills buf in a single crossing
 // through the same shim the purego binding uses.
 func (s *Stmt) StepRow(buf []Col) (bool, error) {
-	rc := C.bbx_step_row(s.stmt, C.int(len(buf)), &buf[0])
+	rc := C.rowbatch_step(s.stmt, C.int(len(buf)), &buf[0])
 	switch rc {
 	case resultRow:
 		return true, nil
 	case resultDone:
 		return false, nil
 	default:
-		return false, s.c.err("bbx_step_row")
+		return false, s.c.err("rowbatch_step")
 	}
 }
 

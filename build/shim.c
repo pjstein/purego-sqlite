@@ -1,5 +1,5 @@
 /*
-** bbx_step_row -- fetch an entire result row in one foreign call.
+** rowbatch_step -- fetch an entire result row in one foreign call.
 **
 ** Why this exists. Reading a four-column row through the SQLite C API costs
 ** seven calls: one step, one column_type or accessor per column, and a second
@@ -46,13 +46,13 @@ typedef struct {
   const void *ptr;
   int32_t len;
   int32_t type;
-} bbx_col;
+} rowbatch_col;
 
-#define BBX_SQLITE_ROW 100
-#define BBX_SQLITE_INTEGER 1
-#define BBX_SQLITE_FLOAT 2
-#define BBX_SQLITE_TEXT 3
-#define BBX_SQLITE_BLOB 4
+#define ROWBATCH_SQLITE_ROW 100
+#define ROWBATCH_SQLITE_INTEGER 1
+#define ROWBATCH_SQLITE_FLOAT 2
+#define ROWBATCH_SQLITE_TEXT 3
+#define ROWBATCH_SQLITE_BLOB 4
 
 /*
 ** Steps the statement. On any result other than SQLITE_ROW the output buffer
@@ -63,9 +63,9 @@ typedef struct {
 ** SQLite's usual lifetime rule: they are valid until the next step, reset, or
 ** finalize of this statement.
 */
-int bbx_step_row(sqlite3_stmt *stmt, int ncol, bbx_col *out) {
+int rowbatch_step(sqlite3_stmt *stmt, int ncol, rowbatch_col *out) {
   int rc = sqlite3_step(stmt);
-  if (rc != BBX_SQLITE_ROW) {
+  if (rc != ROWBATCH_SQLITE_ROW) {
     return rc;
   }
 
@@ -83,19 +83,19 @@ int bbx_step_row(sqlite3_stmt *stmt, int ncol, bbx_col *out) {
     out[i].len = 0;
 
     switch (t) {
-    case BBX_SQLITE_INTEGER:
+    case ROWBATCH_SQLITE_INTEGER:
       out[i].ival = sqlite3_column_int64(stmt, i);
       break;
-    case BBX_SQLITE_FLOAT:
+    case ROWBATCH_SQLITE_FLOAT:
       out[i].fval = sqlite3_column_double(stmt, i);
       break;
-    case BBX_SQLITE_TEXT:
+    case ROWBATCH_SQLITE_TEXT:
       /* Pointer before length: fetching the pointer can convert the value and
       ** change its length, which is SQLite's own documented ordering rule. */
       out[i].ptr = sqlite3_column_text(stmt, i);
       out[i].len = sqlite3_column_bytes(stmt, i);
       break;
-    case BBX_SQLITE_BLOB:
+    case ROWBATCH_SQLITE_BLOB:
       out[i].ptr = sqlite3_column_blob(stmt, i);
       out[i].len = sqlite3_column_bytes(stmt, i);
       break;
@@ -106,7 +106,7 @@ int bbx_step_row(sqlite3_stmt *stmt, int ncol, bbx_col *out) {
   return rc;
 }
 
-/* Reports the size the Go side expects bbx_col to be, so a mismatch between
+/* Reports the size the Go side expects rowbatch_col to be, so a mismatch between
 ** this file and the binding is caught at load rather than by corrupting a
 ** result row. */
-int bbx_col_size(void) { return (int)sizeof(bbx_col); }
+int rowbatch_col_size(void) { return (int)sizeof(rowbatch_col); }

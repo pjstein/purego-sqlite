@@ -30,7 +30,7 @@ func TestRowBatchingIsActive(t *testing.T) {
 	case disabled:
 		t.Log("row batching disabled by environment; this run covered the per-call fallback path")
 	case !active:
-		t.Fatalf("the shipped library has no bbx_step_row, so every other test in this package just ran the fallback path; rebuild with `make build`")
+		t.Fatalf("the shipped library has no rowbatch_step, so every other test in this package just ran the fallback path; rebuild with `make build`")
 	default:
 		t.Log("row batching active; this run covered the batched path")
 	}

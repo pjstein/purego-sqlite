@@ -12,7 +12,7 @@ import (
 // against the same library; there is no reason to set it in production.
 const BatchEnv = "PUREGO_SQLITE_BATCH"
 
-// colValue mirrors bbx_col in build/shim.c exactly. The size is checked
+// colValue mirrors rowbatch_col in build/shim.c exactly. The size is checked
 // against the library's own sizeof at load, so a change to one file without
 // the other fails immediately rather than silently misreading rows.
 type colValue struct {
@@ -24,7 +24,7 @@ type colValue struct {
 }
 
 var (
-	batchAddr    uintptr // bbx_step_row, 0 when the library does not have it
+	batchAddr    uintptr // rowbatch_step, 0 when the library does not have it
 	batchEnabled bool
 )
 
@@ -34,11 +34,11 @@ func bindRowBatch(h uintptr) {
 	if os.Getenv(BatchEnv) == "0" {
 		return
 	}
-	stepAddr, err := purego.Dlsym(h, "bbx_step_row")
+	stepAddr, err := purego.Dlsym(h, "rowbatch_step")
 	if err != nil || stepAddr == 0 {
 		return
 	}
-	sizeAddr, err := purego.Dlsym(h, "bbx_col_size")
+	sizeAddr, err := purego.Dlsym(h, "rowbatch_col_size")
 	if err != nil || sizeAddr == 0 {
 		return
 	}
