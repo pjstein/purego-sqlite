@@ -67,6 +67,7 @@ type RunResult struct {
 
 type Report struct {
 	Invocation   string                 `json:"invocation"`
+	RowBatching  bool                   `json:"row_batching_active"`
 	Machine      map[string]string      `json:"machine"`
 	Config       map[string]any         `json:"config"`
 	Capabilities []map[string]string    `json:"capabilities"`
@@ -135,9 +136,12 @@ func main() {
 
 	invocation := strings.Join(os.Args, " ")
 
+	batching, _ := sqlite3.RowBatchingActive()
+
 	report := Report{
-		Invocation: invocation,
-		Machine:    machineFacts(),
+		Invocation:  invocation,
+		RowBatching: batching,
+		Machine:     machineFacts(),
 		Config: map[string]any{
 			"duration":     duration.String(),
 			"warmup":       warmup.String(),
@@ -155,7 +159,8 @@ func main() {
 	}
 
 	fmt.Println("== invocation (re-run this verbatim to reproduce)")
-	fmt.Printf("   PUREGO_SQLITE_BATCH=%q %s\n", os.Getenv("PUREGO_SQLITE_BATCH"), invocation)
+	fmt.Printf("   %s=%q %s\n", sqlite3.BatchEnv, os.Getenv(sqlite3.BatchEnv), invocation)
+	fmt.Printf("   row batching in this process: %t\n", batching)
 
 	fmt.Println("\n== machine and toolchain")
 	for _, k := range sortedKeys(report.Machine) {
@@ -239,7 +244,22 @@ func machineFacts() map[string]string {
 		version = "unavailable: " + err.Error()
 	}
 	source, _ := sqlite3.SourceID()
+
+	// Whether the row-batching shim is in use is recorded, not assumed. The
+	// "batching off" configuration is only meaningful if batching was actually
+	// off, and an environment variable that failed to reach the process would
+	// otherwise produce a config-C table identical to config A and no sign
+	// that anything was wrong.
+	batching, batchErr := sqlite3.RowBatchingActive()
+	batchState := fmt.Sprintf("%t", batching)
+	if batchErr != nil {
+		batchState = "unknown: " + batchErr.Error()
+	}
+
 	return map[string]string{
+		"row batching":    batchState,
+		"batch env":       fmt.Sprintf("%s=%q", sqlite3.BatchEnv, os.Getenv(sqlite3.BatchEnv)),
+		"shipped library": sqlite3.LoadedLibraryPath(),
 		"goos":            runtime.GOOS,
 		"goarch":          runtime.GOARCH,
 		"go version":      runtime.Version(),

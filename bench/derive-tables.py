@@ -51,10 +51,25 @@ def fmt(s, unit="", digits=0):
     return f"{s['mean']:,.{digits}f} ± {s['sd']:,.{digits}f}{unit}{flag}"
 
 
-def contention_table(report, title, note=""):
+def contention_table(report, title, note="", expect_batching=None):
+    """expect_batching asserts what the run was supposed to be measuring.
+
+    A config-C run that silently kept row batching on would produce a table
+    identical to config A with nothing to signal the mistake, so the intent is
+    stated here and checked against what the harness recorded.
+    """
+    if expect_batching is not None:
+        actual = report.get("row_batching_active")
+        if actual != expect_batching:
+            raise SystemExit(
+                f"REFUSING TO PUBLISH {title!r}: row batching was {actual}, "
+                f"expected {expect_batching}. The run did not measure what it claims.")
+
     print(f"\n### {title}\n")
     if note:
         print(note + "\n")
+    print(f"Row batching active in this run: **{report.get('row_batching_active')}**. "
+          f"Invocation environment: `{report['config'].get('batch_env', '')!r}`.\n")
     rounds = report["config"]["rounds"]
     print(f"Mean ± sample standard deviation over {rounds} interleaved rounds. "
           f"A `!` marks a figure whose stddev exceeds 10% of its mean.\n")
@@ -117,7 +132,8 @@ def main():
         "Config A — readers at an identical, fixed write rate (2,000 appends/s)",
         "This is the configuration that answers the question: writer and reader "
         "throughput trade against each other, so readers are only comparable "
-        "when the write load is held equal.")
+        "when the write load is held equal.",
+        expect_batching=True)
 
     print("\n#### Machine state per round, Config A")
     round_states(a)
@@ -128,7 +144,8 @@ def main():
             load(b_path),
             "Config B — writer unthrottled",
             "Included to show the trade-off, not because its cross-driver reader "
-            "numbers are comparable. They are not.")
+            "numbers are comparable. They are not.",
+            expect_batching=True)
 
     c_path = os.path.join(d, "contended-fixed-2000-nobatch.json")
     if os.path.exists(c_path):
@@ -136,7 +153,8 @@ def main():
         contention_table(
             c,
             "Config C — our binding with row batching disabled, same fixed write rate",
-            "Directly comparable to Config A; the only difference is the shim.")
+            "Directly comparable to Config A; the only difference is the shim.",
+            expect_batching=False)
 
 
 if __name__ == "__main__":
