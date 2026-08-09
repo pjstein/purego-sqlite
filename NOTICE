@@ -1,0 +1,126 @@
+purego-sqlite
+Copyright (c) 2026 pjstein
+Licensed under the MIT License. See LICENSE.
+
+This file states, component by component, what in this repository is our own
+work and what is somebody else's. It is the attribution notice for the binary
+artifacts committed under lib/, which are compiled from sources this repository
+does not vendor but does distribute in compiled form.
+
+
+================================================================================
+1. SQLite -- upstream amalgamation, compiled and shipped
+================================================================================
+
+  Component:  SQLite 3.53.4 amalgamation (sqlite3.c, sqlite3.h)
+  Origin:     https://sqlite.org/2026/sqlite-amalgamation-3530400.zip
+  Pinned in:  sqlite-version.lock (SHA256 and upstream's published SHA3-256)
+  License:    Public domain
+  Modified:   No. Compiled unmodified; configuration is by -D flags only
+              (build/flags.sh), which is what SQLite's own build system does.
+  Shipped in: lib/darwin_arm64/libsqlite3.dylib
+              lib/linux_amd64/libsqlite3.so
+
+SQLite's authors place it in the public domain. Every source file in the
+amalgamation carries this dedication in place of a legal notice:
+
+     The author disclaims copyright to this source code.  In place of
+     a legal notice, here is a blessing:
+
+        May you do good and not evil.
+        May you find forgiveness for yourself and forgive others.
+        May you share freely, never taking more than you give.
+
+The amalgamation source is not committed to this repository. build/fetch.sh
+downloads it from sqlite.org and verifies both hashes before unpacking; the
+unpacked tree lives in build/upstream/, which is gitignored. What this
+repository commits is the compiled result.
+
+
+================================================================================
+2. sqlite-vec -- optional extension, compiled into the shipped libraries
+================================================================================
+
+  Component:  sqlite-vec 0.1.9 (sqlite-vec.c, sqlite-vec.h)
+  Author:     Alex Garcia (asg017)
+  Origin:     https://github.com/asg017/sqlite-vec
+  Pinned in:  build/extensions.lock (SHA256)
+  License:    Dual-licensed Apache-2.0 OR MIT, at the recipient's option.
+              This distribution elects MIT.
+  Modified:   No. Compiled unmodified with -DSQLITE_VEC_STATIC -DSQLITE_CORE.
+  Shipped in: lib/darwin_arm64/libsqlite3.dylib
+              lib/linux_amd64/libsqlite3.so
+
+License texts: third_party/sqlite-vec/LICENSE-MIT (the one elected here)
+               third_party/sqlite-vec/LICENSE-APACHE (the alternative, for
+               recipients who prefer to take it under Apache-2.0)
+
+  MIT License
+  Copyright (c) 2024 Alex Garcia
+
+Read this carefully, because the default in the build scripts and the content
+of the committed libraries are not the same thing:
+
+  - `make build` builds WITHOUT sqlite-vec. That is the source-build default.
+  - The libraries COMMITTED under lib/ were built WITH it, by
+    `WITH_SQLITE_VEC=1 make build` (equivalently `make ship-lib`).
+
+So a consumer who takes the prebuilt library -- which is the normal path, and
+the one `go get` gives you -- receives sqlite-vec's compiled code, and the MIT
+notice above travels with it. `sqlite3.CompiledExtensions()` reports at runtime
+what the loaded library actually carries.
+
+
+================================================================================
+3. ebitengine/purego -- Go dependency, not vendored
+================================================================================
+
+  Component:  github.com/ebitengine/purego v0.10.2
+  Copyright:  The Ebitengine Authors
+  Origin:     https://github.com/ebitengine/purego
+  Pinned in:  go.mod / go.sum
+  License:    Apache-2.0 (SPDX-License-Identifier: Apache-2.0)
+  Modified:   No.
+  Shipped in: Nothing in this repository. It is an ordinary Go module
+              requirement; the Go toolchain fetches it into a consumer's build.
+              A binary that imports this package will link purego's code, so
+              its license is reproduced here for that consumer's benefit.
+
+License text: third_party/purego/LICENSE
+
+purego ships no NOTICE file of its own, so there is none to propagate.
+
+
+================================================================================
+4. Our own code
+================================================================================
+
+Everything not listed above is original work in this repository, under the MIT
+license in LICENSE. Two pieces deserve a precise statement, because "derived
+from SQLite" would be the wrong description of either:
+
+  build/shim.c -- the row-batching shim. Original C written for this
+    repository. It contains no SQLite source code. It declares the prototypes
+    of the eight public sqlite3_* entry points it calls (sqlite3_step,
+    sqlite3_column_*) and calls them in the order any caller would, in order to
+    return a whole result row across one foreign-function boundary instead of
+    seven. It is compiled into the same shared library as the amalgamation
+    purely so that it can make those calls without a boundary crossing of its
+    own. It is a consumer of SQLite's public API, not a derivative of SQLite's
+    implementation.
+
+  build/extensions.c -- auto-registration for compiled-in extensions. Original
+    C. Declares sqlite3_auto_extension and each enabled extension's init
+    function, and calls them. Same relationship to SQLite: a caller of the
+    published interface.
+
+The Go binding (library.go and the rest of the root package) is original work.
+It carries numeric constants and result-code names that mirror sqlite3.h --
+SQLITE_OPEN_*, SQLITE_ROW, the extended result codes, and so on. Those are
+interface facts, and they come from a public-domain header in any case.
+
+The corpus under conformance/ and the benchmark harness under bench/ are
+original work. bench/ is a separate Go module and pulls in third-party SQLite
+implementations (modernc.org/sqlite, github.com/ncruces/go-sqlite3) purely as
+measurement subjects; see bench/go.mod for their versions. Nothing in bench/ is
+distributed as part of this package, and the root module does not depend on it.
