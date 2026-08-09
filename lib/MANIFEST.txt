@@ -1,0 +1,27 @@
+# Shipped SQLite libraries -- what they are and how to check them.
+#
+# Regenerate with `make manifest`. Rebuild with `make ship-lib`, which
+# builds the configuration recorded below and then rewrites this file.
+#
+# To verify a library yourself:
+#     shasum -a 256 lib/darwin_arm64/libsqlite3.dylib
+# and compare against the sha256 line for that platform.
+
+sqlite-version    3.53.4
+sqlite-sha256     1e71ddf93849c6a6ecf58b827c0692073d2dd7ee40196158068f7b29f422e87d
+sqlite-sha3-256   628a44cfe82c66aed1ccbbe85a562d2e33ebe64b3288981ed76285612227934e
+sqlite-vec        0.1.9
+sqlite-vec-sha256 3acd67cb4aff080c7050926fd3cf8227905fe5b7ee3829d8ee5024ab1283cf61
+build-recipe      WITH_SQLITE_VEC=1 make build   (i.e. `make ship-lib`)
+compile-flags     build/flags.sh, plus build/shim.c and build/extensions.c
+
+[darwin_arm64]
+  path    lib/darwin_arm64/libsqlite3.dylib
+  size    1532096 bytes
+  sha256  9ed02541ba0c5ebbbebbd477c4fa1f94c351b74762343c15f39957f064f22176
+
+[linux_amd64]
+  path    lib/linux_amd64/libsqlite3.so
+  size    1519680 bytes
+  sha256  46f7623cbc743fe4dcaa9b2b9daf906261ab61e3d67b7ae26e9b8fdb137d1913
+
