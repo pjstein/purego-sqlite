@@ -184,9 +184,20 @@ type libFuncs struct {
 	bindParameterIndex func(stmt uintptr, name string) int32
 	bindParameterName  func(stmt uintptr, i int32) string
 
+	// Runtime extension loading. Both are optional at the library level:
+	// SQLITE_OMIT_LOAD_EXTENSION builds do not have them, and this package
+	// still works, refusing only the two methods that need them.
+	loadExtension       func(db uintptr, file, entry string, errMsg *uintptr) int32
+	enableLoadExtension uintptr
+
+	// Application-defined functions.
+	createFunctionV2 func(db uintptr, name string, nArg, enc int32, pApp, xFunc, xStep, xFinal, xDestroy uintptr) int32
+
 	// Float-carrying: must stay on the reflection path.
 	bindDouble   func(stmt uintptr, i int32, v float64) int32
 	columnDouble func(stmt uintptr, i int32) float64
+	valueDouble  func(v uintptr) float64
+	resultDouble func(ctx uintptr, v float64)
 
 	backupInit      func(dst uintptr, dstName string, src uintptr, srcName string) uintptr
 	backupStep      func(b uintptr, nPage int32) int32
@@ -199,6 +210,12 @@ type libFuncs struct {
 	aColumnCount, aDataCount, aColumnType, aColumnInt64        uintptr
 	aColumnText, aColumnBlob, aColumnBytes                     uintptr
 	aErrcode, aExtendedErrcode                                 uintptr
+
+	// The application-defined-function surface, on the raw path because it is
+	// called once per argument per row.
+	aValueType, aValueInt64, aValueText, aValueBlob, aValueBytes uintptr
+	aResultInt64, aResultText, aResultBlob, aResultNull          uintptr
+	aResultError, aUserData                                      uintptr
 }
 
 var lib libFuncs
@@ -257,6 +274,9 @@ func bindSymbols(h uintptr) (err error) {
 	reg(&lib.bindParameterName, "sqlite3_bind_parameter_name")
 	reg(&lib.bindDouble, "sqlite3_bind_double")
 	reg(&lib.columnDouble, "sqlite3_column_double")
+	reg(&lib.valueDouble, "sqlite3_value_double")
+	reg(&lib.resultDouble, "sqlite3_result_double")
+	reg(&lib.createFunctionV2, "sqlite3_create_function_v2")
 
 	reg(&lib.backupInit, "sqlite3_backup_init")
 	reg(&lib.backupStep, "sqlite3_backup_step")
@@ -281,11 +301,39 @@ func bindSymbols(h uintptr) (err error) {
 	lib.aColumnBytes = addr("sqlite3_column_bytes")
 	lib.aErrcode = addr("sqlite3_errcode")
 	lib.aExtendedErrcode = addr("sqlite3_extended_errcode")
+	lib.aValueType = addr("sqlite3_value_type")
+	lib.aValueInt64 = addr("sqlite3_value_int64")
+	lib.aValueText = addr("sqlite3_value_text")
+	lib.aValueBlob = addr("sqlite3_value_blob")
+	lib.aValueBytes = addr("sqlite3_value_bytes")
+	lib.aResultInt64 = addr("sqlite3_result_int64")
+	lib.aResultText = addr("sqlite3_result_text")
+	lib.aResultBlob = addr("sqlite3_result_blob")
+	lib.aResultNull = addr("sqlite3_result_null")
+	lib.aResultError = addr("sqlite3_result_error")
+	lib.aUserData = addr("sqlite3_user_data")
 
 	// Optional, and looked up after everything required has resolved.
 	bindRowBatch(h)
+	bindExtensions(h)
+	bindLoadExtension(h)
 
 	return nil
+}
+
+// bindLoadExtension resolves runtime extension loading if the library has it.
+// A library compiled SQLITE_OMIT_LOAD_EXTENSION does not, and that is a valid
+// configuration rather than an error -- some deployments want exactly that.
+func bindLoadExtension(h uintptr) {
+	if p, err := purego.Dlsym(h, "sqlite3_enable_load_extension"); err == nil && p != 0 {
+		lib.enableLoadExtension = p
+	}
+	if p, err := purego.Dlsym(h, "sqlite3_load_extension"); err == nil && p != 0 {
+		func() {
+			defer func() { recover() }()
+			purego.RegisterFunc(&lib.loadExtension, p)
+		}()
+	}
 }
 
 // Version reports the SQLite version string of the loaded library, for example

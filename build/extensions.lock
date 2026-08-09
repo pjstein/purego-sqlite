@@ -1,0 +1,19 @@
+# Optional SQLite extensions this repository can compile into the shipped
+# library, pinned the same way SQLite itself is.
+#
+# Nothing here is built by default. `make build` produces a library without
+# them; `WITH_SQLITE_VEC=1 make build` produces one with sqlite-vec compiled
+# in. The Go binding detects at load which extensions the library it opened
+# actually carries, so both libraries work with the same package.
+#
+# To add an extension: pin it here, add a case to build/fetch-extensions.sh,
+# add its init call to build/extensions.c, and add a smoke test that proves it
+# answers a query rather than merely linking.
+
+SQLITE_VEC_VERSION=0.1.9
+SQLITE_VEC_URL=https://github.com/asg017/sqlite-vec/releases/download/v0.1.9/sqlite-vec-0.1.9-amalgamation.tar.gz
+SQLITE_VEC_SHA256=3acd67cb4aff080c7050926fd3cf8227905fe5b7ee3829d8ee5024ab1283cf61
+
+# Upstream state at pin time (2026-08-08): released 2026-03-31, repository last
+# pushed 2026-05-18, not archived. Checked rather than assumed, because a
+# vector extension nobody maintains is a liability rather than a capability.

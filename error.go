@@ -132,6 +132,10 @@ func (e *Error) Is(target error) bool {
 	return e.Code.Primary() == c.Primary()
 }
 
+// errNoLoadExtension is returned when the loaded library was compiled without
+// runtime extension loading.
+var errNoLoadExtension = errors.New("sqlite3: the loaded library was compiled without runtime extension loading (SQLITE_OMIT_LOAD_EXTENSION)")
+
 func truncate(s string, n int) string {
 	if len(s) <= n {
 		return s
