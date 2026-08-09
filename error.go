@@ -82,8 +82,14 @@ func (c Code) Primary() Code { return c & 0xff }
 // IsExtended reports whether c carries extended detail beyond its primary code.
 func (c Code) IsExtended() bool { return c > 0xff && c != Row && c != Done }
 
+// Error makes a bare [Code] usable as an error, so that a sentinel like [Busy]
+// can be both the thing you compare against with errors.Is and the thing you
+// return.
 func (c Code) Error() string { return c.String() }
 
+// String returns SQLite's own text for the code, from sqlite3_errstr, with the
+// numeric value appended when the code is an extended one — SQLite's strings
+// for extended codes are not always distinct from their primary code's.
 func (c Code) String() string {
 	if s := sqliteErrstr(c); s != "" {
 		if c.IsExtended() {
@@ -104,6 +110,9 @@ type Error struct {
 	SQL      string // statement text, when the failure came from one
 }
 
+// Error renders the failure as "sqlite3: <code>[extended]: <message> (in <sql>)",
+// omitting each part SQLite did not supply. The SQL is truncated so that a
+// generated statement cannot turn one log line into a page.
 func (e *Error) Error() string {
 	s := "sqlite3: " + e.Code.String()
 	if e.Extended != e.Code && e.Extended != 0 {
