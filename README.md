@@ -108,6 +108,41 @@ go test ./...
 PUREGO_SQLITE_BATCH=0 go test ./...
 ```
 
+## Extensions
+
+Three ways to add SQL that SQLite does not ship with, in descending order of how much they cost you.
+
+**Compile one in.** Because this repository builds its own SQLite, it can build extensions alongside it. sqlite-vec is wired up as the worked example: pinned by checksum in `build/extensions.lock`, off by default, and built with
+
+```
+WITH_SQLITE_VEC=1 make build
+```
+
+That produces a second shape of the library, so the package feature-detects which one it opened — `CompiledExtensions()` reports what is registered, and registration runs through `sqlite3_auto_extension` so an extension is present on every connection, not just the first. Adding another means pinning it, adding its init call to `build/extensions.c`, and adding a test that proves it answers a query rather than merely links.
+
+**Load one at runtime.** `Conn.EnableLoadExtension` then `Conn.LoadExtension` bind SQLite's own dlopen path. Loading is refused until you ask for it, and enabling the C API deliberately does *not* enable SQL's `load_extension()` — a SQL string that can load a shared library is a much larger blast radius than a Go call that can. Note that a loadable extension must route every call through the `sqlite3_api` routines table; one that references libsqlite3's symbols directly will link against nothing and jump to a null pointer on first use.
+
+**Write one in Go.** `Conn.CreateFunction` registers a Go closure as a SQL scalar function:
+
+```go
+err := conn.CreateFunction("go_abs", 1, sqlite3.Deterministic,
+    func(ctx *sqlite3.FuncContext, args []sqlite3.Value) {
+        v := args[0].Int64()
+        if v < 0 { v = -v }
+        ctx.ResultInt64(v)
+    })
+```
+
+A panic inside the function becomes a SQL error rather than unwinding into C and killing the process, and every registered function shares one purego callback — purego can mint only about 2000 C function pointers per process and never reclaims one.
+
+**Know what it costs.** Answering a SQL function in Go measures 582 ± 5 ns per invocation against 25 ns for SQLite's own C equivalent — about 557ns of pure boundary, and roughly twelve times the Go→C crossing in the other direction. Go functions here are for things called thousands of times, not millions.
+
+## Replication
+
+Litestream works on the database *files*, so it is driver-agnostic in principle and verified in practice: `bench/run-litestream-smoke.sh` replicates a database being written through this binding to a local file replica, restores it, and checks the restored copy — integrity clean, identical row and byte counts, and the whole convicted value corpus intact.
+
+Litestream v0.5 as a *library* is cgo-free in the paths that compile (its `go.mod` mentions `mattn/go-sqlite3`, but only a transitive dependency's test binary reaches it), so it composes with this package without giving up `CGO_ENABLED=0`. It does embed `modernc.org/sqlite`, so a process using both carries two SQLite implementations; running the litestream binary as a sidecar avoids that.
+
 ## Concurrency
 
 The shipped library is compiled `SQLITE_THREADSAFE=2` (multi-thread), and this package inherits exactly that contract:
@@ -122,7 +157,7 @@ This is deliberately not hidden behind an internal mutex. A connection pool is a
 Named so nobody has to discover it by reading source:
 
 - **No `database/sql` driver.** v1 is the direct API. The driver interfaces would add row-scanning conversions, a connection pool, and `context` plumbing on top of what is here — worth doing, but as an additive subpackage, not as the thing you have to go through.
-- **No callbacks or hooks.** No `update_hook`, `commit_hook`, authorizer, custom SQL functions, or custom collations. purego can express them (`purego.NewCallback`), but a Go function called from C on a SQLite-owned thread is a different set of rules, and the surface is bounded until something needs them.
+- **No hooks.** No `update_hook`, `commit_hook`, or authorizer. Application-defined scalar functions *are* here (see Extensions); aggregates, window functions and custom collations are not yet.
 - **No `time.Time` binding.** SQLite stores time as whatever the application decides — Unix seconds, Julian day, ISO-8601 text. A binding that picked one would be picking your schema.
 - **No incremental blob I/O**, and no `sqlite3_serialize`/`deserialize`. Backup is here; those are not.
 
