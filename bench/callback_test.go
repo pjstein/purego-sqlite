@@ -80,58 +80,72 @@ func runAgg(tb testing.TB, c *sqlite3.Conn, sql string) {
 }
 
 func BenchmarkSQLFunction(b *testing.B) {
-	// Which implementation this process is measuring is stated, not assumed:
-	// the path is chosen at library load, so a benchmark that did not say
+	// Which implementation this process measures is stated, not assumed: the
+	// scalar path is chosen at library load, so a benchmark that stayed silent
 	// would be indistinguishable from one measuring the other one.
 	fast, err := sqlite3.UseMarshaledFunctions()
 	if err != nil {
 		b.Fatal(err)
 	}
-	label := "purego portable (crossing per arg and result)"
-	if fast {
-		label = "purego marshaled (one crossing per call)"
+
+	goAbs := func(ctx *sqlite3.FuncContext, a []sqlite3.Value) {
+		v := a[0].Int64()
+		if v < 0 {
+			v = -v
+		}
+		ctx.ResultInt64(v)
 	}
 
-	b.Run("builtin abs (all in C)", func(b *testing.B) {
+	b.Run("C: builtin abs", func(b *testing.B) {
 		c := setupFnDB(b)
 		runAgg(b, c, `SELECT sum(abs(v)) FROM n`)
 	})
 
-	b.Run(label, func(b *testing.B) {
-		c := setupFnDB(b)
-		if err := c.CreateFunction("go_abs", 1, sqlite3.Deterministic, func(ctx *sqlite3.FuncContext, a []sqlite3.Value) {
-			v := a[0].Int64()
-			if v < 0 {
-				v = -v
-			}
-			ctx.ResultInt64(v)
-		}); err != nil {
-			b.Fatal(err)
-		}
-		runAgg(b, c, `SELECT sum(go_abs(v)) FROM n`)
-	})
-
-	// A Go aggregate, whose per-row accumulation happens in C and which
-	// crosses to Go once per query rather than once per row. Only available on
-	// the marshaled path, which is the point: it is the shape that makes a Go
-	// implementation cheap.
 	if fast {
-		b.Run("go aggregate (one crossing per query)", func(b *testing.B) {
+		// The default: C marshaling plus slice-index dispatch. The map-under-
+		// a-lock variant this replaced was measured in the same harness and
+		// then removed; its numbers are preserved in
+		// results/micro-callback-ladder-with-map-dispatch.txt.
+		b.Run("scalar: marshaled (default)", func(b *testing.B) {
 			c := setupFnDB(b)
-			if err := c.CreateAggregate("go_sum_abs", 1, sqlite3.Deterministic,
-				func(ctx *sqlite3.FuncContext, a sqlite3.Accumulation) {
-					// Same answer as sum(abs(v)) for this data, computed in Go.
-					ctx.ResultFloat(-a.Sum)
-				}); err != nil {
+			if err := c.CreateFunction("go_abs", 1, sqlite3.Deterministic, goAbs); err != nil {
 				b.Fatal(err)
 			}
-			runAgg(b, c, `SELECT go_sum_abs(v) FROM n`)
+			runAgg(b, c, `SELECT sum(go_abs(v)) FROM n`)
+		})
+	} else {
+		// Rung 0: the portable path, one crossing per argument and result.
+		b.Run("scalar: portable (per-arg crossings)", func(b *testing.B) {
+			c := setupFnDB(b)
+			if err := c.CreateFunction("go_abs", 1, sqlite3.Deterministic, goAbs); err != nil {
+				b.Fatal(err)
+			}
+			runAgg(b, c, `SELECT sum(go_abs(v)) FROM n`)
 		})
 	}
 
+	// Rung 3, and the combination question the owner raised: the aggregate
+	// path has its own C trampoline and its own dispatch table, so whether the
+	// scalar path underneath it is marshaled or portable should not matter.
+	// Measured in both processes rather than reasoned about.
+	aggLabel := "aggregate: batched (scalar path portable)"
+	if fast {
+		aggLabel = "aggregate: batched (scalar path marshaled)"
+	}
+	b.Run(aggLabel, func(b *testing.B) {
+		c := setupFnDB(b)
+		if err := c.CreateAggregate("go_sum_abs", 1, sqlite3.Deterministic,
+			func(ctx *sqlite3.FuncContext, a sqlite3.Accumulation) {
+				ctx.ResultFloat(-a.Sum)
+			}); err != nil {
+			b.Skipf("aggregate unavailable: %v", err)
+		}
+		runAgg(b, c, `SELECT go_sum_abs(v) FROM n`)
+	})
+
 	// ncruces for scale: its functions are Go calling Go, with no boundary to
 	// cross at all, which is the fairest thing to compare a callback tax to.
-	b.Run("ncruces Go function (no boundary)", func(b *testing.B) {
+	b.Run("ncruces: Go function (no boundary)", func(b *testing.B) {
 		nc, err := ncruces.Open(filepath.Join(b.TempDir(), "fn.db"))
 		if err != nil {
 			b.Fatal(err)
@@ -182,6 +196,9 @@ func BenchmarkSQLFunction(b *testing.B) {
 				b.Fatal(err)
 			}
 			calls++
+		}
+		if calls == 0 {
+			b.Fatal("measured nothing")
 		}
 		b.ReportMetric(float64(b.Elapsed().Nanoseconds())/float64(calls*fnRows), "ns/call")
 	})

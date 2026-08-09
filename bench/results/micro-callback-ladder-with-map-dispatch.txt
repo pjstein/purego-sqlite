@@ -1,0 +1,76 @@
+# callback optimization ladder
+# written 2026-08-09T03:15:50Z
+# 5 passes; each pass runs marshaled, then portable, then the floor
+# marshaled/portable alternate by invocation because the path is fixed at library load
+
+### pass 1/5  load { 3.67 4.74 5.72 }
+BenchmarkSQLFunction/C:_builtin_abs-12         	   94446	     25360 ns/op	        25.36 ns/call	     664 B/op	       6 allocs/op
+BenchmarkSQLFunction/scalar:_marshaled_+_map_dispatch-12         	    9882	    249410 ns/op	       249.4 ns/call	   56665 B/op	    3006 allocs/op
+BenchmarkSQLFunction/scalar:_marshaled_+_slice_dispatch-12       	    9904	    238830 ns/op	       238.8 ns/call	   56664 B/op	    3006 allocs/op
+BenchmarkSQLFunction/aggregate:_batched_(scalar_path_marshaled)-12         	  102885	     23505 ns/op	        23.51 ns/call	     720 B/op	       9 allocs/op
+BenchmarkSQLFunction/ncruces:_Go_function_(no_boundary)-12                 	   17458	    137789 ns/op	       137.8 ns/call	     580 B/op	       6 allocs/op
+BenchmarkSQLFunction/C:_builtin_abs-12         	   94533	     26021 ns/op	        26.02 ns/call	     664 B/op	       6 allocs/op
+BenchmarkSQLFunction/scalar:_portable_(per-arg_crossings)-12         	    3832	    619502 ns/op	       619.5 ns/call	  840671 B/op	   11006 allocs/op
+BenchmarkSQLFunction/aggregate:_batched_(scalar_path_portable)-12    	  103261	     23180 ns/op	        23.18 ns/call	     720 B/op	       9 allocs/op
+BenchmarkSQLFunction/ncruces:_Go_function_(no_boundary)-12           	   17979	    133408 ns/op	       133.4 ns/call	     580 B/op	       6 allocs/op
+BenchmarkCallbackFloor/purego_callback,_no_arguments-12         	    1560	   1540981 ns/op	       154.1 ns/call
+BenchmarkCallbackFloor/purego_callback,_one_pointer_argument-12 	    1383	   1734857 ns/op	       173.5 ns/call
+BenchmarkCallbackFloor/Go_to_C_for_comparison_(cgo_null_call)-12         	100000000	        20.86 ns/op	        20.86 ns/call
+
+### pass 2/5  load { 5.05 4.99 5.77 }
+BenchmarkSQLFunction/C:_builtin_abs-12         	   93824	     25514 ns/op	        25.51 ns/call	     664 B/op	       6 allocs/op
+BenchmarkSQLFunction/scalar:_marshaled_+_map_dispatch-12         	    9998	    244115 ns/op	       244.1 ns/call	   56665 B/op	    3006 allocs/op
+BenchmarkSQLFunction/scalar:_marshaled_+_slice_dispatch-12       	   10000	    239518 ns/op	       239.5 ns/call	   56664 B/op	    3006 allocs/op
+BenchmarkSQLFunction/aggregate:_batched_(scalar_path_marshaled)-12         	  101428	     23610 ns/op	        23.61 ns/call	     720 B/op	       9 allocs/op
+BenchmarkSQLFunction/ncruces:_Go_function_(no_boundary)-12                 	   18021	    133332 ns/op	       133.3 ns/call	     580 B/op	       6 allocs/op
+BenchmarkSQLFunction/C:_builtin_abs-12         	   93704	     25892 ns/op	        25.89 ns/call	     664 B/op	       6 allocs/op
+BenchmarkSQLFunction/scalar:_portable_(per-arg_crossings)-12         	    3736	    623767 ns/op	       623.8 ns/call	  840671 B/op	   11006 allocs/op
+BenchmarkSQLFunction/aggregate:_batched_(scalar_path_portable)-12    	  100546	     24013 ns/op	        24.01 ns/call	     720 B/op	       9 allocs/op
+BenchmarkSQLFunction/ncruces:_Go_function_(no_boundary)-12           	   18058	    134204 ns/op	       134.2 ns/call	     580 B/op	       6 allocs/op
+BenchmarkCallbackFloor/purego_callback,_no_arguments-12         	    1566	   1523044 ns/op	       152.3 ns/call
+BenchmarkCallbackFloor/purego_callback,_one_pointer_argument-12 	    1380	   1771912 ns/op	       177.2 ns/call
+BenchmarkCallbackFloor/Go_to_C_for_comparison_(cgo_null_call)-12         	100000000	        20.56 ns/op	        20.56 ns/call
+
+### pass 3/5  load { 4.82 4.95 5.73 }
+BenchmarkSQLFunction/C:_builtin_abs-12         	   94077	     25386 ns/op	        25.39 ns/call	     664 B/op	       6 allocs/op
+BenchmarkSQLFunction/scalar:_marshaled_+_map_dispatch-12         	    9874	    245427 ns/op	       245.4 ns/call	   56664 B/op	    3006 allocs/op
+BenchmarkSQLFunction/scalar:_marshaled_+_slice_dispatch-12       	   10000	    240606 ns/op	       240.6 ns/call	   56664 B/op	    3006 allocs/op
+BenchmarkSQLFunction/aggregate:_batched_(scalar_path_marshaled)-12         	  103328	     23335 ns/op	        23.34 ns/call	     720 B/op	       9 allocs/op
+BenchmarkSQLFunction/ncruces:_Go_function_(no_boundary)-12                 	   17503	    137146 ns/op	       137.1 ns/call	     580 B/op	       6 allocs/op
+BenchmarkSQLFunction/C:_builtin_abs-12         	   91414	     25828 ns/op	        25.83 ns/call	     664 B/op	       6 allocs/op
+BenchmarkSQLFunction/scalar:_portable_(per-arg_crossings)-12         	    3728	    625005 ns/op	       625.0 ns/call	  840672 B/op	   11006 allocs/op
+BenchmarkSQLFunction/aggregate:_batched_(scalar_path_portable)-12    	  102030	     23557 ns/op	        23.56 ns/call	     720 B/op	       9 allocs/op
+BenchmarkSQLFunction/ncruces:_Go_function_(no_boundary)-12           	   18134	    132922 ns/op	       132.9 ns/call	     580 B/op	       6 allocs/op
+BenchmarkCallbackFloor/purego_callback,_no_arguments-12         	    1546	   1544273 ns/op	       154.4 ns/call
+BenchmarkCallbackFloor/purego_callback,_one_pointer_argument-12 	    1370	   1730182 ns/op	       173.0 ns/call
+BenchmarkCallbackFloor/Go_to_C_for_comparison_(cgo_null_call)-12         	100000000	        20.80 ns/op	        20.80 ns/call
+
+### pass 4/5  load { 5.10 4.98 5.71 }
+BenchmarkSQLFunction/C:_builtin_abs-12         	   94327	     25418 ns/op	        25.42 ns/call	     664 B/op	       6 allocs/op
+BenchmarkSQLFunction/scalar:_marshaled_+_map_dispatch-12         	    9787	    243195 ns/op	       243.2 ns/call	   56665 B/op	    3006 allocs/op
+BenchmarkSQLFunction/scalar:_marshaled_+_slice_dispatch-12       	   10000	    243522 ns/op	       243.5 ns/call	   56664 B/op	    3006 allocs/op
+BenchmarkSQLFunction/aggregate:_batched_(scalar_path_marshaled)-12         	  103086	     23428 ns/op	        23.43 ns/call	     720 B/op	       9 allocs/op
+BenchmarkSQLFunction/ncruces:_Go_function_(no_boundary)-12                 	   17826	    135001 ns/op	       135.0 ns/call	     580 B/op	       6 allocs/op
+BenchmarkSQLFunction/C:_builtin_abs-12         	   91659	     25477 ns/op	        25.48 ns/call	     664 B/op	       6 allocs/op
+BenchmarkSQLFunction/scalar:_portable_(per-arg_crossings)-12         	    3847	    617927 ns/op	       617.9 ns/call	  840672 B/op	   11006 allocs/op
+BenchmarkSQLFunction/aggregate:_batched_(scalar_path_portable)-12    	  102156	     23662 ns/op	        23.66 ns/call	     720 B/op	       9 allocs/op
+BenchmarkSQLFunction/ncruces:_Go_function_(no_boundary)-12           	   18061	    132937 ns/op	       132.9 ns/call	     580 B/op	       6 allocs/op
+BenchmarkCallbackFloor/purego_callback,_no_arguments-12         	    1579	   1529972 ns/op	       153.0 ns/call
+BenchmarkCallbackFloor/purego_callback,_one_pointer_argument-12 	    1387	   1729986 ns/op	       173.0 ns/call
+BenchmarkCallbackFloor/Go_to_C_for_comparison_(cgo_null_call)-12         	100000000	        20.78 ns/op	        20.78 ns/call
+
+### pass 5/5  load { 4.80 4.91 5.66 }
+BenchmarkSQLFunction/C:_builtin_abs-12         	   93640	     25582 ns/op	        25.58 ns/call	     664 B/op	       6 allocs/op
+BenchmarkSQLFunction/scalar:_marshaled_+_map_dispatch-12         	    9836	    246653 ns/op	       246.7 ns/call	   56665 B/op	    3006 allocs/op
+BenchmarkSQLFunction/scalar:_marshaled_+_slice_dispatch-12       	    9840	    239835 ns/op	       239.8 ns/call	   56665 B/op	    3006 allocs/op
+BenchmarkSQLFunction/aggregate:_batched_(scalar_path_marshaled)-12         	  102046	     23666 ns/op	        23.67 ns/call	     720 B/op	       9 allocs/op
+BenchmarkSQLFunction/ncruces:_Go_function_(no_boundary)-12                 	   17792	    134574 ns/op	       134.6 ns/call	     580 B/op	       6 allocs/op
+BenchmarkSQLFunction/C:_builtin_abs-12         	   93584	     25634 ns/op	        25.63 ns/call	     664 B/op	       6 allocs/op
+BenchmarkSQLFunction/scalar:_portable_(per-arg_crossings)-12         	    3849	    693599 ns/op	       693.6 ns/call	  840674 B/op	   11006 allocs/op
+BenchmarkSQLFunction/aggregate:_batched_(scalar_path_portable)-12    	  100576	     24619 ns/op	        24.62 ns/call	     720 B/op	       9 allocs/op
+BenchmarkSQLFunction/ncruces:_Go_function_(no_boundary)-12           	   17590	    136636 ns/op	       136.6 ns/call	     580 B/op	       6 allocs/op
+BenchmarkCallbackFloor/purego_callback,_no_arguments-12         	    1533	   1546082 ns/op	       154.6 ns/call
+BenchmarkCallbackFloor/purego_callback,_one_pointer_argument-12 	    1341	   1784117 ns/op	       178.4 ns/call
+BenchmarkCallbackFloor/Go_to_C_for_comparison_(cgo_null_call)-12         	100000000	        21.17 ns/op	        21.17 ns/call
+
+# machine at end: load { 5.81 5.18 5.73 }

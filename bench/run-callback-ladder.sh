@@ -6,6 +6,11 @@
 # The portable and marshaled paths are chosen at library load, so they cannot
 # both live in one process. They alternate pass by pass instead, seconds apart,
 # so machine drift lands on both.
+#
+# Within the marshaled process the rungs separate further: C marshaling with
+# the original map-under-a-lock dispatch, against C marshaling with slice-index
+# dispatch. The aggregate is measured in BOTH processes, because whether the
+# scalar path underneath it matters is a question to answer rather than assume.
 set -euo pipefail
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$here"
@@ -23,9 +28,13 @@ mkdir -p "$here/results"
 for i in $(seq 1 "$PASSES"); do
   {
     echo "### pass $i/$PASSES  load $(sysctl -n vm.loadavg)"
-    go test -run '^$' -bench BenchmarkSQLFunction -benchtime "$BENCHTIME" -count 1 -benchmem . 2>&1 | grep Benchmark
-    PUREGO_SQLITE_FUNCTIONS=portable go test -run '^$' -bench 'BenchmarkSQLFunction/purego' -benchtime "$BENCHTIME" -count 1 -benchmem . 2>&1 | grep Benchmark
-    go test -run '^$' -bench BenchmarkCallbackFloor -benchtime "$BENCHTIME" -count 1 . 2>&1 | grep Benchmark
+    # `|| true` on every grep: an empty match must not kill the run under
+    # `set -e`. It already did once, when the benchmarks were renamed and a
+    # stale filter matched nothing -- a silent-looking failure of exactly the
+    # kind this whole harness exists to prevent.
+    { go test -run '^$' -bench BenchmarkSQLFunction -benchtime "$BENCHTIME" -count 1 -benchmem . 2>&1 | grep Benchmark; } || true
+    { PUREGO_SQLITE_FUNCTIONS=portable go test -run '^$' -bench BenchmarkSQLFunction -benchtime "$BENCHTIME" -count 1 -benchmem . 2>&1 | grep Benchmark; } || true
+    { go test -run '^$' -bench BenchmarkCallbackFloor -benchtime "$BENCHTIME" -count 1 . 2>&1 | grep Benchmark; } || true
     echo
   } >> "$out"
 done
