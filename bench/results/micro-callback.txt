@@ -1,0 +1,29 @@
+# callback tax: answering a SQL function in Go vs in C
+# written 2026-08-09T02:48:41Z
+# 5 separate invocations, one full pass each (see run-micro.sh for why)
+
+### repetition 1/5  load { 8.34 8.92 7.78 }
+BenchmarkSQLFunction/builtin_abs_(all_in_C)-12         	   94104	     25360 ns/op	        25.36 ns/call
+BenchmarkSQLFunction/purego_callback_into_Go-12        	    4129	    580372 ns/op	       580.4 ns/call
+BenchmarkSQLFunction/ncruces_Go_function_(no_boundary)-12         	   17682	    135761 ns/op	       135.8 ns/call
+ok  	github.com/pjstein/purego-sqlite/bench	7.488s
+### repetition 2/5  load { 8.39 8.92 7.79 }
+BenchmarkSQLFunction/builtin_abs_(all_in_C)-12         	   94635	     25339 ns/op	        25.34 ns/call
+BenchmarkSQLFunction/purego_callback_into_Go-12        	    4054	    577654 ns/op	       577.7 ns/call
+BenchmarkSQLFunction/ncruces_Go_function_(no_boundary)-12         	   17780	    135098 ns/op	       135.1 ns/call
+ok  	github.com/pjstein/purego-sqlite/bench	7.435s
+### repetition 3/5  load { 8.82 9.00 7.83 }
+BenchmarkSQLFunction/builtin_abs_(all_in_C)-12         	   93982	     25486 ns/op	        25.49 ns/call
+BenchmarkSQLFunction/purego_callback_into_Go-12        	    4047	    589320 ns/op	       589.3 ns/call
+BenchmarkSQLFunction/ncruces_Go_function_(no_boundary)-12         	   17862	    134217 ns/op	       134.2 ns/call
+ok  	github.com/pjstein/purego-sqlite/bench	7.486s
+### repetition 4/5  load { 8.23 8.87 7.80 }
+BenchmarkSQLFunction/builtin_abs_(all_in_C)-12         	   93906	     25565 ns/op	        25.57 ns/call
+BenchmarkSQLFunction/purego_callback_into_Go-12        	    4117	    579511 ns/op	       579.5 ns/call
+BenchmarkSQLFunction/ncruces_Go_function_(no_boundary)-12         	   17673	    135742 ns/op	       135.7 ns/call
+ok  	github.com/pjstein/purego-sqlite/bench	7.478s
+### repetition 5/5  load { 8.14 8.84 7.79 }
+BenchmarkSQLFunction/builtin_abs_(all_in_C)-12         	   94816	     25393 ns/op	        25.39 ns/call
+BenchmarkSQLFunction/purego_callback_into_Go-12        	    4094	    583846 ns/op	       583.8 ns/call
+BenchmarkSQLFunction/ncruces_Go_function_(no_boundary)-12         	   17632	    136477 ns/op	       136.5 ns/call
+ok  	github.com/pjstein/purego-sqlite/bench	7.512s

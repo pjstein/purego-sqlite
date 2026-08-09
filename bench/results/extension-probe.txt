@@ -1,0 +1,37 @@
+# extension capability probe of the competing drivers
+# written 2026-08-09T02:48:30Z
+# behavioural: a query that answers, not a compile-option flag
+
+== ncruces/go-sqlite3, extensions registered per connection
+  fts5 BEFORE ext/fts5.Register                  FAIL  sqlite3: SQL logic error: no such module: fts5
+  ext/fts5.Register(conn)                        OK
+  fts5 AFTER register: CREATE VIRTUAL TABLE      OK
+  fts5 AFTER register: INSERT + MATCH answers    OK
+  ext/vec1.Register(conn)                        OK
+  vec1: knn query [MY SYNTAX, NOT A CAPABILITY CLAIM] FAIL  sqlite3: SQL logic error: unable to use function MATCH in the requested context
+  CreateFunction: a Go scalar answers in SQL     OK
+  runtime load_extension(.dylib) is even expressible FAIL  no enable_load_extension/load_extension in the API surface (wasm sandbox: a host .dylib cannot be dlopened)
+
+== modernc.org/sqlite, through database/sql
+  fts5 (compiled in): CREATE VIRTUAL TABLE + MATCH OK
+  runtime load_extension: enable then load a .dylib FAIL  load_extension reachable? err=SQL logic error: not authorized (1)
+
+# --- our binding, the same three questions, from its own suite ---
+=== RUN   TestCompiledExtensionsMatchTheBuild
+    extension_test.go:26: compiled in: [sqlite-vec]
+--- PASS: TestCompiledExtensionsMatchTheBuild (0.00s)
+=== RUN   TestSQLiteVec
+    extension_test.go:59: sqlite-vec v0.1.9
+--- PASS: TestSQLiteVec (0.00s)
+=== RUN   TestRuntimeExtensionLoading
+--- PASS: TestRuntimeExtensionLoading (0.20s)
+=== RUN   TestCreateFunction
+--- PASS: TestCreateFunction (0.00s)
+=== RUN   TestFunctionValuesSurviveTheCorpus
+    function_test.go:145: round-tripped 29 corpus values through a Go SQL function
+--- PASS: TestFunctionValuesSurviveTheCorpus (0.01s)
+=== RUN   TestFunctionPanicBecomesSQLError
+--- PASS: TestFunctionPanicBecomesSQLError (0.00s)
+=== RUN   TestManyFunctionsShareOneCallback
+--- PASS: TestManyFunctionsShareOneCallback (0.00s)
+ok  	github.com/pjstein/purego-sqlite	0.435s

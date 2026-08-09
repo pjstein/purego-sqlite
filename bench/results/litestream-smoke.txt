@@ -1,0 +1,38 @@
+# litestream compatibility smoke
+# written 2026-08-09T02:47:27Z
+# litestream: v0.5.16
+# sqlite:     loaded:  SQLite 3.53.4
+
+== seed the database through this binding
+wrote 500 rows (corpus cycled 17 times)
+
+== start litestream replicating
+== append 2000 more rows through this binding WHILE litestream follows
+wrote 2000 rows (corpus cycled 68 times)
+
+== replica contents
+  ltx files:        6
+  replica size: 528K	/var/folders/3d/cwnv9frs74x2p05j4t6_40mh0000gn/T/tmp.HN8aMOcu8P/replica
+
+== restore from the replica into a new file
+
+== original, verified through this binding
+  integrity_check   ok
+  rows              2500
+  total blob bytes  8240799
+  corpus values     29 checked, 0 corrupted
+  RESULT            ok
+
+== restored, verified through this binding
+  integrity_check   ok
+  rows              2500
+  total blob bytes  8240799
+  corpus values     29 checked, 0 corrupted
+  RESULT            ok
+
+== litestream log (last lines)
+time=2026-08-08T22:47:37.315-04:00 level=INFO msg="replica sync" system=store db=app.db replica=file txid.replica=0000000000000004 txid.db=0000000000000004
+time=2026-08-08T22:47:39.315-04:00 level=INFO msg="replica sync" system=store db=app.db replica=file txid.replica=0000000000000004 txid.db=0000000000000004
+time=2026-08-08T22:47:39.392-04:00 level=INFO msg="signal received, litestream shutting down" signal=terminated
+time=2026-08-08T22:47:39.392-04:00 level=INFO msg="replica sync" system=store db=app.db replica=file txid.replica=0000000000000004 txid.db=0000000000000004
+time=2026-08-08T22:47:39.392-04:00 level=INFO msg="litestream shut down"
