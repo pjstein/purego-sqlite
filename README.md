@@ -136,7 +136,7 @@ err := conn.CreateFunction("go_abs", 1, sqlite3.Deterministic,
 
 A panic inside the function becomes a SQL error rather than unwinding into C and killing the process, and every registered function shares one purego callback — purego can mint only about 2000 C function pointers per process and never reclaims one.
 
-**Know what it costs, and prefer an aggregate.** Answering a SQL *scalar* in Go costs 239 ± 2 ns per invocation against 26 ns for SQLite's own C equivalent. Most of that is a floor rather than slack: a bare purego callback from C costs 175 ns before your function does anything, because purego's callback path takes a process-wide mutex and dispatches through reflection. There is no faster door.
+**Know what it costs, and prefer an aggregate.** Answering a SQL *scalar* in Go costs 245 ± 7 ns per invocation against 26 ns for SQLite's own C equivalent. Most of that is a floor rather than slack: a bare purego callback from C costs 175 ns before your function does anything, because purego's callback path takes a process-wide mutex and dispatches through reflection. There is no faster door.
 
 So for anything per-row, use `CreateAggregate` instead. It accumulates in C and crosses to Go once per group:
 
@@ -151,7 +151,7 @@ err := conn.CreateAggregate("go_total", 1, 0,
     })
 ```
 
-That measures 23.5 ± 0.1 ns per row — faster than SQLite's own `abs()`, because 999 crossings in every 1000 stop happening. What C can summarise is deliberately narrow (count, sum, min, max, an exact integer sum while inputs stay integral); an aggregate needing every individual row is an ordinary query with a loop around it, and the loop is cheaper.
+That measures 23.7 ± 0.3 ns per row — faster than SQLite's own `abs()`, because 999 crossings in every 1000 stop happening. What C can summarise is deliberately narrow (count, sum, min, max, an exact integer sum while inputs stay integral); an aggregate needing every individual row is an ordinary query with a loop around it, and the loop is cheaper.
 
 ## Replication
 
