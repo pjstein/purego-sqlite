@@ -107,8 +107,8 @@ env_file="$results/environment.txt"
   uname -a
   echo
   echo "## power and thermal"
-  pmset -g ps 2>/dev/null | head -2 || echo "pmset unavailable"
-  pmset -g therm 2>/dev/null | head -4 || true
+  { pmset -g ps 2>/dev/null | head -2; } || echo "pmset unavailable"
+  { pmset -g therm 2>/dev/null | head -4; } || true
   echo
   echo "## toolchain"
   go version
@@ -127,7 +127,11 @@ env_file="$results/environment.txt"
   echo "## machine state at the start of this invocation"
   echo "load average: $(sysctl -n vm.loadavg)"
   echo "top CPU consumers:"
-  ps -Aro '%cpu,comm' | head -12
+  # `|| true` is load-bearing: head exits after 12 lines, ps takes SIGPIPE, and
+  # with `set -o pipefail` that failure would kill the run. It did exactly that
+  # once, after the gate had cleared and the environment record was half
+  # written -- a forty-minute measurement lost to a broken pipe.
+  { ps -Aro '%cpu,comm' | head -12; } || true
 } > "$env_file"
 echo "wrote $env_file"
 
@@ -183,7 +187,7 @@ echo "machine state after the final round:"
   echo
   echo "## machine state after the final round ($(date -u +%Y-%m-%dT%H:%M:%SZ))"
   echo "load average: $(sysctl -n vm.loadavg)"
-  ps -Aro '%cpu,comm' | head -8
+  { ps -Aro '%cpu,comm' | head -8; } || true
 } >> "$env_file"
 
 echo "all raw outputs under $results"
