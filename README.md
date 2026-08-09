@@ -106,6 +106,7 @@ The suite runs on both paths, and an internal test reads the same rows both ways
 ```
 go test ./...
 PUREGO_SQLITE_BATCH=0 go test ./...
+PUREGO_SQLITE_FUNCTIONS=portable go test ./...
 ```
 
 ## Extensions
@@ -135,7 +136,22 @@ err := conn.CreateFunction("go_abs", 1, sqlite3.Deterministic,
 
 A panic inside the function becomes a SQL error rather than unwinding into C and killing the process, and every registered function shares one purego callback — purego can mint only about 2000 C function pointers per process and never reclaims one.
 
-**Know what it costs.** Answering a SQL function in Go measures 582 ± 5 ns per invocation against 25 ns for SQLite's own C equivalent — about 557ns of pure boundary, and roughly twelve times the Go→C crossing in the other direction. Go functions here are for things called thousands of times, not millions.
+**Know what it costs, and prefer an aggregate.** Answering a SQL *scalar* in Go costs 239 ± 2 ns per invocation against 26 ns for SQLite's own C equivalent. Most of that is a floor rather than slack: a bare purego callback from C costs 175 ns before your function does anything, because purego's callback path takes a process-wide mutex and dispatches through reflection. There is no faster door.
+
+So for anything per-row, use `CreateAggregate` instead. It accumulates in C and crosses to Go once per group:
+
+```go
+err := conn.CreateAggregate("go_total", 1, 0,
+    func(ctx *sqlite3.FuncContext, acc sqlite3.Accumulation) {
+        if acc.AllInt {
+            ctx.ResultInt64(acc.IntSum)
+            return
+        }
+        ctx.ResultFloat(acc.Sum)
+    })
+```
+
+That measures 23.5 ± 0.1 ns per row — faster than SQLite's own `abs()`, because 999 crossings in every 1000 stop happening. What C can summarise is deliberately narrow (count, sum, min, max, an exact integer sum while inputs stay integral); an aggregate needing every individual row is an ordinary query with a loop around it, and the loop is cheaper.
 
 ## Replication
 
@@ -157,7 +173,7 @@ This is deliberately not hidden behind an internal mutex. A connection pool is a
 Named so nobody has to discover it by reading source:
 
 - **No `database/sql` driver.** v1 is the direct API. The driver interfaces would add row-scanning conversions, a connection pool, and `context` plumbing on top of what is here — worth doing, but as an additive subpackage, not as the thing you have to go through.
-- **No hooks.** No `update_hook`, `commit_hook`, or authorizer. Application-defined scalar functions *are* here (see Extensions); aggregates, window functions and custom collations are not yet.
+- **No hooks.** No `update_hook`, `commit_hook`, or authorizer. Scalar functions and batched aggregates *are* here (see Extensions); window functions and custom collations are not.
 - **No `time.Time` binding.** SQLite stores time as whatever the application decides — Unix seconds, Julian day, ISO-8601 text. A binding that picked one would be picking your schema.
 - **No incremental blob I/O**, and no `sqlite3_serialize`/`deserialize`. Backup is here; those are not.
 
