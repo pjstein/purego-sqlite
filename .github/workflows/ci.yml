@@ -1,0 +1,192 @@
+name: CI
+
+# Nothing here needs a secret. Every job runs identically on a fork's pull
+# request, which is the point: a contributor can see their change go green
+# without anyone granting them anything.
+
+on:
+  push:
+    branches: ["**"]
+    tags-ignore: ["**"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # The suite against the libraries this repository actually ships, on the two
+  # platforms it ships them for. macos-latest is darwin/arm64 and ubuntu-latest
+  # is linux/amd64 -- the matrix is checked rather than assumed in the first
+  # step, because a runner image that quietly changed architecture would
+  # otherwise turn this job into a test of the unsupported-platform path.
+  test:
+    name: test ${{ matrix.platform }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            platform: darwin/arm64
+          - os: ubuntu-latest
+            platform: linux/amd64
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Confirm the runner is the platform this job claims to test
+        run: |
+          actual="$(go env GOOS)/$(go env GOARCH)"
+          echo "runner reports $actual, job expects ${{ matrix.platform }}"
+          test "$actual" = "${{ matrix.platform }}"
+
+      - name: The shipped library matches lib/MANIFEST.txt
+        run: go test -run TestManifestMatchesTheCommittedLibraries -v .
+
+      - name: Suite, batched read path
+        run: go test ./...
+
+      - name: Suite, per-call read path
+        run: go test ./...
+        env:
+          PUREGO_SQLITE_BATCH: "0"
+
+      - name: Suite, portable function dispatch
+        run: go test ./...
+        env:
+          PUREGO_SQLITE_FUNCTIONS: portable
+
+      - name: Report what was actually loaded
+        run: go run ./cmd/sqliteversion
+
+  # Formatting, vet, and the two build-shape promises the README makes:
+  # consumers build with CGO_ENABLED=0, and an unsupported platform still
+  # compiles rather than failing at build time.
+  lint:
+    name: fmt, vet, cross-compile
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: gofmt
+        run: |
+          # gofmt recurses, so `.` already covers bench/ and cmd/. The file
+          # count is printed because "no output" is what both a clean tree and
+          # a gofmt that saw nothing look like.
+          count="$(find . -name '*.go' -not -path './build/upstream/*' | wc -l)"
+          test "$count" -gt 0
+          out="$(gofmt -l .)"
+          if [ -n "$out" ]; then
+            echo "gofmt would rewrite:"
+            echo "$out"
+            exit 1
+          fi
+          echo "gofmt clean over $count files"
+
+      - name: go vet
+        run: go vet ./...
+
+      - name: Consumers build without cgo, and cross-compile
+        env:
+          CGO_ENABLED: "0"
+        run: |
+          for target in darwin/arm64 linux/amd64; do
+            GOOS="${target%/*}" GOARCH="${target#*/}" go build ./...
+            echo "built $target"
+          done
+
+      - name: A platform with no shipped library still compiles
+        env:
+          CGO_ENABLED: "0"
+        run: |
+          GOOS=windows GOARCH=amd64 go build ./...
+          GOOS=linux GOARCH=arm64 go build ./...
+          echo "unsupported-platform path compiles; it fails at first use, not at build"
+
+      - name: Shell scripts parse
+        run: |
+          for s in build/*.sh bench/*.sh; do
+            bash -n "$s" || exit 1
+          done
+          echo "parsed $(ls build/*.sh bench/*.sh | wc -l) scripts"
+
+  # Build the library from pinned source, on both platforms, in the shipped
+  # configuration -- sqlite-vec compiled in. This is the job that catches a
+  # platform build script that compiles on the author's machine and nowhere
+  # else: the linux script needed an explicit -I for the amalgamation's
+  # sqlite3.h, because sqlite-vec's quote-include searches its own directory
+  # first, and nothing but a real linux compile would have found that.
+  #
+  # It deliberately does not compare hashes against lib/MANIFEST.txt. Two clang
+  # or gcc versions do not emit an identical shared library from identical
+  # input, and asserting they do would produce a red build that means nothing.
+  # What is asserted is stronger where it matters: the freshly built library
+  # passes the same suite, and sqlite-vec answers a query rather than merely
+  # linking.
+  build-from-source:
+    name: build from source ${{ matrix.platform }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            platform: darwin/arm64
+          - os: ubuntu-latest
+            platform: linux/amd64
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Fetch and verify the pinned amalgamation
+        run: make fetch
+
+      - name: Compile the shipped configuration
+        run: make ship-lib
+
+      - name: The rebuilt library differs from the committed one only as a compiler differs
+        run: |
+          git --no-pager diff --stat -- lib/ || true
+          echo "(a diff here is expected: a different toolchain emits a different binary)"
+
+      - name: Suite against the freshly built library
+        run: go test ./...
+
+      - name: Suite against the freshly built library, per-call read path
+        run: go test ./...
+        env:
+          PUREGO_SQLITE_BATCH: "0"
+
+      # TestSQLiteVec skips when the library was built without the extension,
+      # and a skip is green. In this job the extension is compiled in by
+      # construction, so a skip means the build silently dropped it -- which is
+      # exactly the regression worth failing on.
+      - name: sqlite-vec answers a query in the build we just made
+        run: |
+          # Not piped into tee: a pipeline would report tee's exit status and
+          # hide a failing test behind a successful copy.
+          go test -run 'TestSQLiteVec|TestCompiledExtensionsMatchTheBuild' -v . > /tmp/vec.log 2>&1 || { cat /tmp/vec.log; exit 1; }
+          cat /tmp/vec.log
+          if grep -q -- '--- SKIP' /tmp/vec.log; then
+            echo "sqlite-vec test skipped, but this job builds with it compiled in"
+            exit 1
+          fi
+          grep -q 'sqlite-vec v' /tmp/vec.log
