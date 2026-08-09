@@ -92,6 +92,15 @@ wait_for_quiet() {
   done
 }
 
+lockfile="$results/.run.lock"
+if [ -f "$lockfile" ] && kill -0 "$(cat "$lockfile" 2>/dev/null)" 2>/dev/null; then
+  echo "REFUSING: another bake-off run (pid $(cat "$lockfile")) is already writing into $results" >&2
+  echo "Two runs sharing a results directory produce a dataset half from each, with a header describing neither." >&2
+  exit 1
+fi
+echo $$ > "$lockfile"
+trap 'rm -f "$lockfile"' EXIT
+
 echo "pre-flight: waiting for a quiet machine before measuring"
 wait_for_quiet
 
