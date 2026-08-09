@@ -108,6 +108,25 @@ def contention_table(report, title, note="", expect_batching=None):
         print("\nNo driver's median-polls/s stddev exceeded 10% of its mean.")
 
 
+def slot_balance(report):
+    """Check the rotation actually gave every driver every position.
+
+    Rotation is the fix for slot-linked contamination; if it silently failed,
+    the tables would look fine and be wrong in exactly the way rotation was
+    introduced to prevent.
+    """
+    slots = {}
+    for r in report["results"]:
+        slots.setdefault(r["driver"], []).append(r.get("slot"))
+    print("\n**Slot rotation check** — each driver's positions across rounds:\n")
+    for name, ss in slots.items():
+        counts = {}
+        for x in ss:
+            counts[x] = counts.get(x, 0) + 1
+        spread = f"{min(counts.values())}-{max(counts.values())}" if counts else "n/a"
+        print(f"- {name}: slots {sorted(ss)} (each position used {spread} times)")
+
+
 def round_states(report):
     print("\n| round | load 1/5/15 | build tools | processes over 15% CPU |")
     print("| --- | --- | --- | --- |")
@@ -134,6 +153,8 @@ def main():
         "throughput trade against each other, so readers are only comparable "
         "when the write load is held equal.",
         expect_batching=True)
+
+    slot_balance(a)
 
     print("\n#### Machine state per round, Config A")
     round_states(a)

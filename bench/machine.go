@@ -3,7 +3,6 @@ package bakeoff
 import (
 	"fmt"
 	"os/exec"
-	"runtime"
 	"sort"
 	"strconv"
 	"strings"
@@ -130,11 +129,21 @@ func CaptureMachineState() MachineState {
 	return st
 }
 
+// QuietLoadCeiling is the one-minute load average below which a round is
+// treated as trustworthy. It matches the pre-flight gate in run-bakeoff.sh on
+// purpose: two different definitions of "quiet" in one harness is how a round
+// gets annotated as suspect while the gate that admitted it thought otherwise.
+//
+// The value is empirical. This host idles around 6-8 with the other agent
+// lanes present, and rounds taken at that baseline reproduce to within a few
+// percent; what actually ruins a round is a compiler storm or a disk-scanning
+// backup, both of which push it well past this.
+const QuietLoadCeiling = 9.0
+
 // Quiet reports whether the machine looked idle enough for the round to be
-// trusted: no build tools burning CPU, and a one-minute load average that
-// leaves most cores to the benchmark.
+// trusted: no build tools burning CPU, and a load average under the ceiling.
 func (s MachineState) Quiet() bool {
-	return len(s.BuildProcs) == 0 && s.Load1 < float64(runtime.NumCPU())/3
+	return len(s.BuildProcs) == 0 && s.Load1 < QuietLoadCeiling
 }
 
 func (s MachineState) String() string {

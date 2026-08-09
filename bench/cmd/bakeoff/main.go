@@ -45,6 +45,7 @@ var (
 type RunResult struct {
 	Driver          string    `json:"driver"`
 	Round           int       `json:"round"`
+	Slot            int       `json:"slot"` // position within the round, 1-based
 	Seconds         float64   `json:"seconds"`
 	WriteRateTarget int64     `json:"write_rate_target"`
 	Appends         int64     `json:"appends"`
@@ -172,7 +173,7 @@ func main() {
 		fmt.Fprintf(os.Stderr, "no drivers matched %q\n", *only)
 		os.Exit(1)
 	}
-	fmt.Printf("\n== %d drivers under test, interleaved: every round runs each once, in this order\n", len(drivers))
+	fmt.Printf("\n== %d drivers under test, interleaved with a rotating order: every round runs each once, and each driver takes every slot across rounds\n", len(drivers))
 	for i, d := range drivers {
 		fmt.Printf("   %d. %s\n", i+1, d.Name())
 	}
@@ -190,21 +191,42 @@ func main() {
 	}
 	fmt.Printf("   append: %s\n   tail:   %s\n", bakeoff.AppendSQL, bakeoff.TailSQL)
 
-	// Round-robin rather than all-of-A-then-all-of-B. Thermal drift, page
-	// cache warmth and whatever else the machine is doing move slowly; running
-	// a driver's rounds consecutively would fold that drift into that driver's
-	// numbers and nobody else's.
+	// Round-robin rather than all-of-A-then-all-of-B, AND the order within each
+	// round rotates.
+	//
+	// Round-robin alone is not enough, which the first careful run demonstrated
+	// rather than argued: a round takes minutes and the drivers inside it run
+	// sequentially, forty seconds apart, so a contaminant that lasts less than
+	// a round lands on whichever driver held that slot. In that run a linker
+	// storm hit position 1 in one round and a malware scanner hit positions 2-4
+	// in another; per-driver spread reached 29% while rounds 3, 4 and 5 -- the
+	// undisturbed ones -- agreed to within a few percent.
+	//
+	// Rotating by one position per round gives every driver every slot, so
+	// slot-linked contamination averages out instead of accumulating against
+	// whoever happened to go first.
 	for round := 1; round <= *rounds; round++ {
 		state := bakeoff.CaptureMachineState()
 		report.RoundStates = append(report.RoundStates, state)
-		fmt.Printf("\n########## ROUND %d/%d\n   machine: %s\n", round, *rounds, state)
 
-		for _, d := range drivers {
+		order := make([]bakeoff.Driver, len(drivers))
+		for i := range drivers {
+			order[i] = drivers[(i+round-1)%len(drivers)]
+		}
+		names := make([]string, len(order))
+		for i, d := range order {
+			names[i] = d.Name()
+		}
+		fmt.Printf("\n########## ROUND %d/%d\n   machine: %s\n   order:   %s\n",
+			round, *rounds, state, strings.Join(names, " -> "))
+
+		for slot, d := range order {
 			res, err := runOne(d, round)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "%s round %d: %v\n", d.Name(), round, err)
 				os.Exit(1)
 			}
+			res.Slot = slot + 1
 			report.Results = append(report.Results, res)
 			printRun(res)
 		}
@@ -647,7 +669,7 @@ func percentileUs(sorted []time.Duration, p float64) float64 {
 }
 
 func printRun(r RunResult) {
-	fmt.Printf("\n-- %s  round %d  (%.1fs measured)\n", r.Driver, r.Round, r.Seconds)
+	fmt.Printf("\n-- %s  round %d slot %d  (%.1fs measured)\n", r.Driver, r.Round, r.Slot, r.Seconds)
 	fmt.Printf("   writer      %10.0f appends/s  (%d appends committed)\n", r.AppendsPerSec, r.Appends)
 	fmt.Printf("   readers     min %8.0f   median %8.0f   max %8.0f  polls/s   (max/min %.2f)\n",
 		r.PollsPerSecMin, r.PollsPerSecMed, r.PollsPerSecMax, r.FairnessRatio)

@@ -12,7 +12,7 @@ import subprocess
 import sys
 
 cmd = sys.argv[1:] or ["bash", "-c",
-                       "./run-bakeoff.sh 5 30s 200000 && ./run-micro.sh 5 3s && echo ALL_RUNS_COMPLETE"]
+                       "./run-bakeoff.sh 8 30s 200000 && ./run-micro.sh 5 3s && echo ALL_RUNS_COMPLETE"]
 
 pid = os.fork()
 if pid > 0:

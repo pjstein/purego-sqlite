@@ -6,17 +6,21 @@
 # terminal that has since scrolled away is not a measurement, it is a memory.
 #
 # Usage:  bench/run-bakeoff.sh [rounds] [duration] [seed-rows]
-# Default: 5 rounds, 30s measured per run, 200000 seeded events.
+# Default: 8 rounds, 30s measured per run, 200000 seeded events.
 #
-# Every driver runs once per round, in round-robin order, so thermal drift and
-# whatever else the machine is doing land on all of them rather than on
-# whichever went first.
+# Every driver runs once per round and the order rotates by one position each
+# round, so no driver systematically holds the slot a passing contaminant
+# happens to land on.
 set -euo pipefail
 
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$here"
 
-ROUNDS="${1:-5}"
+# Rounds default to 8: with four drivers and a one-slot rotation per round,
+# eight rounds give every driver every position exactly twice. Config B gets
+# fewer because its cross-driver reader numbers are not comparable anyway.
+ROUNDS="${1:-8}"
+ROUNDS_B="${ROUNDS_B:-4}"
 DURATION="${2:-30s}"
 SEED="${3:-200000}"
 WARMUP=3s
@@ -162,7 +166,7 @@ run "contended-fixed-2000" \
 # Kept because it shows the trade-off, not because its cross-driver reader
 # numbers are comparable. They are not.
 run "contended-unthrottled" \
-  "$bin" -duration "$DURATION" -warmup "$WARMUP" -rounds "$ROUNDS" \
+  "$bin" -duration "$DURATION" -warmup "$WARMUP" -rounds "$ROUNDS_B" \
          -readers "$READERS" -seed "$SEED" -writerate 0
 
 # --- Config C: our binding with row batching disabled ------------------------
