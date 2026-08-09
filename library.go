@@ -317,6 +317,9 @@ func bindSymbols(h uintptr) (err error) {
 	bindRowBatch(h)
 	bindExtensions(h)
 	bindLoadExtension(h)
+	bindFunctionFast(h)
+	bindAggregateFast(h)
+	forcePortableFunctions = os.Getenv(FunctionPathEnv) == "portable"
 
 	return nil
 }

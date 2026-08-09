@@ -48,6 +48,23 @@ extern const char* sqlite3_errmsg(sqlite3*);
 // uintptr conversion that go vet would rightly question.
 static void* sqlite_transient(void) { return (void*)(-1); }
 
+// Calls a function pointer n times from C, for measuring what a C-to-Go
+// crossing costs with nothing behind it. This is how the purego callback floor
+// gets a number instead of an adjective.
+static void cgoref_call_n(void (*f)(void), int n) {
+  for (int i = 0; i < n; i++) {
+    f();
+  }
+}
+
+// Same, for a callback taking one pointer argument -- the shape the binding's
+// marshaled dispatch actually uses.
+static void cgoref_call_n_arg(void (*f)(void *), void *arg, int n) {
+  for (int i = 0; i < n; i++) {
+    f(arg);
+  }
+}
+
 // The row-batching shim, which lives in the same dylib. Declared here so the
 // cgo reference can be measured at the same call granularity as the purego
 // binding -- otherwise "purego with batching beats cgo without it" would be a
@@ -257,6 +274,19 @@ func ColValue(c Col) (typ int, ival int64, fval float64, b []byte) {
 		b = C.GoBytes(c.ptr, c.len)
 	}
 	return
+}
+
+// CallN invokes fn from C n times. fn must be a purego callback address --
+// executable code purego allocated, never Go heap memory, which is why
+// reinterpreting the word as a pointer is sound here. See cptr in the binding
+// for the same argument at more length.
+func CallN(fn uintptr, n int) {
+	C.cgoref_call_n((*[0]byte)(*(*unsafe.Pointer)(unsafe.Pointer(&fn))), C.int(n))
+}
+
+// CallNArg invokes fn from C n times, passing arg each time.
+func CallNArg(fn uintptr, arg unsafe.Pointer, n int) {
+	C.cgoref_call_n_arg((*[0]byte)(*(*unsafe.Pointer)(unsafe.Pointer(&fn))), arg, C.int(n))
 }
 
 // NullCall is the cheapest call the library offers: no arguments, an integer

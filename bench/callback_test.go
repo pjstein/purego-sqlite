@@ -80,12 +80,24 @@ func runAgg(tb testing.TB, c *sqlite3.Conn, sql string) {
 }
 
 func BenchmarkSQLFunction(b *testing.B) {
+	// Which implementation this process is measuring is stated, not assumed:
+	// the path is chosen at library load, so a benchmark that did not say
+	// would be indistinguishable from one measuring the other one.
+	fast, err := sqlite3.UseMarshaledFunctions()
+	if err != nil {
+		b.Fatal(err)
+	}
+	label := "purego portable (crossing per arg and result)"
+	if fast {
+		label = "purego marshaled (one crossing per call)"
+	}
+
 	b.Run("builtin abs (all in C)", func(b *testing.B) {
 		c := setupFnDB(b)
 		runAgg(b, c, `SELECT sum(abs(v)) FROM n`)
 	})
 
-	b.Run("purego callback into Go", func(b *testing.B) {
+	b.Run(label, func(b *testing.B) {
 		c := setupFnDB(b)
 		if err := c.CreateFunction("go_abs", 1, sqlite3.Deterministic, func(ctx *sqlite3.FuncContext, a []sqlite3.Value) {
 			v := a[0].Int64()
@@ -98,6 +110,24 @@ func BenchmarkSQLFunction(b *testing.B) {
 		}
 		runAgg(b, c, `SELECT sum(go_abs(v)) FROM n`)
 	})
+
+	// A Go aggregate, whose per-row accumulation happens in C and which
+	// crosses to Go once per query rather than once per row. Only available on
+	// the marshaled path, which is the point: it is the shape that makes a Go
+	// implementation cheap.
+	if fast {
+		b.Run("go aggregate (one crossing per query)", func(b *testing.B) {
+			c := setupFnDB(b)
+			if err := c.CreateAggregate("go_sum_abs", 1, sqlite3.Deterministic,
+				func(ctx *sqlite3.FuncContext, a sqlite3.Accumulation) {
+					// Same answer as sum(abs(v)) for this data, computed in Go.
+					ctx.ResultFloat(-a.Sum)
+				}); err != nil {
+				b.Fatal(err)
+			}
+			runAgg(b, c, `SELECT go_sum_abs(v) FROM n`)
+		})
+	}
 
 	// ncruces for scale: its functions are Go calling Go, with no boundary to
 	// cross at all, which is the fairest thing to compare a callback tax to.
