@@ -1,0 +1,61 @@
+# raw output of 5 separate invocations of:
+#   go test -run ^$ -bench BenchmarkNullCall -benchtime 3s -count 1 -benchmem .
+# one invocation per repetition, so every benchmark runs once per pass
+# written 2026-08-09T01:12:19Z
+
+### repetition 1/5  load { 28.28 23.00 18.52 }  01:12:19Z
+goos: darwin
+goarch: arm64
+pkg: github.com/pjstein/purego-sqlite/bench
+cpu: Apple M2 Max
+BenchmarkNullCall/cgo-12         	174789003	        20.57 ns/op	       0 B/op	       0 allocs/op
+BenchmarkNullCall/purego-SyscallN-12         	54793616	        65.99 ns/op	     208 B/op	       1 allocs/op
+BenchmarkNullCall/purego-RegisterFunc-12     	18286538	       195.1 ns/op	     236 B/op	       3 allocs/op
+PASS
+ok  	github.com/pjstein/purego-sqlite/bench	11.091s
+
+### repetition 2/5  load { 23.48 22.20 18.31 }  01:12:31Z
+goos: darwin
+goarch: arm64
+pkg: github.com/pjstein/purego-sqlite/bench
+cpu: Apple M2 Max
+BenchmarkNullCall/cgo-12         	176456614	        20.43 ns/op	       0 B/op	       0 allocs/op
+BenchmarkNullCall/purego-SyscallN-12         	53421643	        65.68 ns/op	     208 B/op	       1 allocs/op
+BenchmarkNullCall/purego-RegisterFunc-12     	18746647	       193.6 ns/op	     236 B/op	       3 allocs/op
+PASS
+ok  	github.com/pjstein/purego-sqlite/bench	11.051s
+
+### repetition 3/5  load { 20.57 21.62 18.15 }  01:12:43Z
+goos: darwin
+goarch: arm64
+pkg: github.com/pjstein/purego-sqlite/bench
+cpu: Apple M2 Max
+BenchmarkNullCall/cgo-12         	177231760	        20.29 ns/op	       0 B/op	       0 allocs/op
+BenchmarkNullCall/purego-SyscallN-12         	53795040	        65.95 ns/op	     208 B/op	       1 allocs/op
+BenchmarkNullCall/purego-RegisterFunc-12     	18753417	       191.8 ns/op	     236 B/op	       3 allocs/op
+PASS
+ok  	github.com/pjstein/purego-sqlite/bench	11.053s
+
+### repetition 4/5  load { 17.72 20.97 17.96 }  01:12:54Z
+goos: darwin
+goarch: arm64
+pkg: github.com/pjstein/purego-sqlite/bench
+cpu: Apple M2 Max
+BenchmarkNullCall/cgo-12         	178617968	        20.22 ns/op	       0 B/op	       0 allocs/op
+BenchmarkNullCall/purego-SyscallN-12         	53130616	        65.94 ns/op	     208 B/op	       1 allocs/op
+BenchmarkNullCall/purego-RegisterFunc-12     	19130564	       190.6 ns/op	     236 B/op	       3 allocs/op
+PASS
+ok  	github.com/pjstein/purego-sqlite/bench	11.141s
+
+### repetition 5/5  load { 14.38 20.07 17.69 }  01:13:06Z
+goos: darwin
+goarch: arm64
+pkg: github.com/pjstein/purego-sqlite/bench
+cpu: Apple M2 Max
+BenchmarkNullCall/cgo-12         	176639842	        20.36 ns/op	       0 B/op	       0 allocs/op
+BenchmarkNullCall/purego-SyscallN-12         	53625625	        71.77 ns/op	     208 B/op	       1 allocs/op
+BenchmarkNullCall/purego-RegisterFunc-12     	16570490	       200.3 ns/op	     236 B/op	       3 allocs/op
+PASS
+ok  	github.com/pjstein/purego-sqlite/bench	11.065s
+
+# machine at end: load { 12.57 19.49 17.52 }

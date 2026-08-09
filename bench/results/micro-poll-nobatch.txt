@@ -1,0 +1,49 @@
+# raw output of 5 separate invocations of:
+#   PUREGO_SQLITE_BATCH=0 go test -run '^$' -bench BenchmarkPoll/purego -benchtime 3s -count 1 -benchmem .
+# written 2026-08-09T01:16:42Z
+
+### repetition 1/5  load { 4.16 11.85 14.67 }
+goos: darwin
+goarch: arm64
+pkg: github.com/pjstein/purego-sqlite/bench
+cpu: Apple M2 Max
+BenchmarkPoll/purego-sqlite_(native)-12         	   65709	     54537 ns/op	       853.0 ns/row	   1172393 rows/s	  132338 B/op	    1158 allocs/op
+PASS
+ok  	github.com/pjstein/purego-sqlite/bench	3.985s
+
+### repetition 2/5  load { 4.30 11.76 14.62 }
+goos: darwin
+goarch: arm64
+pkg: github.com/pjstein/purego-sqlite/bench
+cpu: Apple M2 Max
+BenchmarkPoll/purego-sqlite_(native)-12         	   67065	     53781 ns/op	       841.1 ns/row	   1188874 rows/s	  132339 B/op	    1158 allocs/op
+PASS
+ok  	github.com/pjstein/purego-sqlite/bench	4.027s
+
+### repetition 3/5  load { 5.00 11.78 14.61 }
+goos: darwin
+goarch: arm64
+pkg: github.com/pjstein/purego-sqlite/bench
+cpu: Apple M2 Max
+BenchmarkPoll/purego-sqlite_(native)-12         	   61566	     55745 ns/op	       871.8 ns/row	   1146996 rows/s	  132339 B/op	    1158 allocs/op
+PASS
+ok  	github.com/pjstein/purego-sqlite/bench	3.837s
+
+### repetition 4/5  load { 4.68 11.60 14.53 }
+goos: darwin
+goarch: arm64
+pkg: github.com/pjstein/purego-sqlite/bench
+cpu: Apple M2 Max
+BenchmarkPoll/purego-sqlite_(native)-12         	   63006	     54176 ns/op	       847.3 ns/row	   1180220 rows/s	  132339 B/op	    1158 allocs/op
+PASS
+ok  	github.com/pjstein/purego-sqlite/bench	3.956s
+
+### repetition 5/5  load { 4.55 11.45 14.46 }
+goos: darwin
+goarch: arm64
+pkg: github.com/pjstein/purego-sqlite/bench
+cpu: Apple M2 Max
+BenchmarkPoll/purego-sqlite_(native)-12         	   66859	     54697 ns/op	       855.5 ns/row	   1168962 rows/s	  132339 B/op	    1158 allocs/op
+PASS
+ok  	github.com/pjstein/purego-sqlite/bench	4.244s
+

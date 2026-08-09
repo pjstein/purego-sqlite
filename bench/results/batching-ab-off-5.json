@@ -1,0 +1,104 @@
+{
+  "invocation": "/Users/pjstein/source/pjstein/purego-sqlite/bench/bin/bakeoff -duration 30s -warmup 3s -rounds 1 -readers 8 -seed 200000 -writerate 2000 -only purego -json /Users/pjstein/source/pjstein/purego-sqlite/bench/results/batching-ab-off-5.json",
+  "row_batching_active": false,
+  "machine": {
+    "batch env": "PUREGO_SQLITE_BATCH=\"0\"",
+    "cpus": "12",
+    "go version": "go1.26.5",
+    "goarch": "arm64",
+    "goos": "darwin",
+    "measured at": "2026-08-08T21:22:59-04:00",
+    "pinned sourceid": "2026-07-24 19:02:57 bf7c7f30031888f4e796e429ab3978879485813aaca6f641c7b33e4e09459bcc",
+    "pinned sqlite": "3.53.4",
+    "row batching": "false",
+    "shipped library": "/Users/pjstein/Library/Caches/purego-sqlite/f2cb875b1f15e8ae/libsqlite3.dylib"
+  },
+  "config": {
+    "append_sql": "INSERT INTO events (stream, kind, ts, payload) VALUES (?, ?, ?, ?)",
+    "batch_env": "0",
+    "duration": "30s",
+    "payload_size": 256,
+    "pragmas": [
+      "PRAGMA busy_timeout=10000",
+      "PRAGMA journal_mode=WAL",
+      "PRAGMA synchronous=NORMAL",
+      "PRAGMA cache_size=-16000",
+      "PRAGMA foreign_keys=OFF"
+    ],
+    "readers": 8,
+    "rounds": 1,
+    "seed_rows": 200000,
+    "tail_limit": 64,
+    "tail_sql": "SELECT seq, kind, ts, payload FROM events WHERE seq \u003e ? ORDER BY seq LIMIT 64",
+    "warmup": "3s",
+    "write_rate": 2000
+  },
+  "capabilities": [
+    {
+      "compile-options-reported": "44",
+      "double-quoted-strings-rejected": "1",
+      "driver": "purego-sqlite (native)",
+      "fts5": "1",
+      "fts5-usable": "yes",
+      "math-functions": "1",
+      "sqlite-version": "3.53.4",
+      "stat4": "1",
+      "threading-mode": "THREADSAFE=2"
+    }
+  ],
+  "round_states": [
+    {
+      "at": "2026-08-08T21:22:59.33344-04:00",
+      "load_1min": 10.64,
+      "load_5min": 10.37,
+      "load_15min": 12.76,
+      "build_processes": [],
+      "busy_processes": [],
+      "total_cpu_percent": 65.8,
+      "power_source": "Now drawing from 'AC Power'",
+      "thermal": "no thermal warning recorded"
+    }
+  ],
+  "results": [
+    {
+      "driver": "purego-sqlite (native)",
+      "round": 1,
+      "slot": 1,
+      "seconds": 30.000129,
+      "write_rate_target": 2000,
+      "appends": 60001,
+      "appends_per_sec": 2000.0247332269803,
+      "reader_polls": [
+        174132,
+        171448,
+        149555,
+        139057,
+        155124,
+        169755,
+        149444,
+        150423
+      ],
+      "reader_rows": [
+        11141879,
+        10970393,
+        9568949,
+        8897826,
+        9925452,
+        10862002,
+        9562077,
+        9624934
+      ],
+      "polls_per_sec_min": 4635.213401915705,
+      "polls_per_sec_median": 5092.428102559159,
+      "polls_per_sec_max": 5804.3750411873225,
+      "polls_per_sec_aggregate": 41964.41955299592,
+      "rows_per_sec_aggregate": 2685105.5207129274,
+      "fairness_ratio_max_over_min": 1.2522346951250207,
+      "latency_p50_us": 137.833,
+      "latency_p99_us": 651.958,
+      "latency_p999_us": 941.042,
+      "latency_samples": 800000,
+      "started_at": "2026-08-08T21:22:59.863498-04:00"
+    }
+  ]
+}

@@ -1,0 +1,76 @@
+# raw output of 5 separate invocations of:
+#   go test -run ^$ -bench BenchmarkPoll -benchtime 3s -count 1 -benchmem .
+# one invocation per repetition, so every benchmark runs once per pass
+# written 2026-08-09T01:13:18Z
+
+### repetition 1/5  load { 12.57 19.49 17.52 }  01:13:18Z
+goos: darwin
+goarch: arm64
+pkg: github.com/pjstein/purego-sqlite/bench
+cpu: Apple M2 Max
+BenchmarkPoll/cgo_(same_library)-12         	  166454	     21215 ns/op	       331.8 ns/row	   3013822 rows/s	   17391 B/op	     127 allocs/op
+BenchmarkPoll/cgo_batched_(same_shim)-12    	  207801	     17140 ns/op	       268.1 ns/row	   3730456 rows/s	   17391 B/op	     127 allocs/op
+BenchmarkPoll/purego-sqlite_(native)-12     	  197997	     18332 ns/op	       286.7 ns/row	   3487746 rows/s	   33121 B/op	     263 allocs/op
+BenchmarkPoll/ncruces/go-sqlite3_(native)-12         	  154716	     21626 ns/op	       338.2 ns/row	   2956625 rows/s	   16368 B/op	      63 allocs/op
+BenchmarkPoll/ncruces/go-sqlite3_(database/sql)-12   	   90242	     39613 ns/op	       619.5 ns/row	   1614098 rows/s	   23141 B/op	     469 allocs/op
+BenchmarkPoll/modernc.org/sqlite_(database/sql)-12   	   87745	     40152 ns/op	       628.0 ns/row	   1592431 rows/s	   38071 B/op	     471 allocs/op
+PASS
+ok  	github.com/pjstein/purego-sqlite/bench	21.587s
+
+### repetition 2/5  load { 11.11 18.74 17.29 }  01:13:40Z
+goos: darwin
+goarch: arm64
+pkg: github.com/pjstein/purego-sqlite/bench
+cpu: Apple M2 Max
+BenchmarkPoll/cgo_(same_library)-12         	  165219	     21727 ns/op	       339.8 ns/row	   2942817 rows/s	   17391 B/op	     127 allocs/op
+BenchmarkPoll/cgo_batched_(same_shim)-12    	  202826	     17464 ns/op	       273.1 ns/row	   3661191 rows/s	   17391 B/op	     127 allocs/op
+BenchmarkPoll/purego-sqlite_(native)-12     	  193942	     18075 ns/op	       282.7 ns/row	   3537412 rows/s	   33121 B/op	     263 allocs/op
+BenchmarkPoll/ncruces/go-sqlite3_(native)-12         	  160471	     21928 ns/op	       343.0 ns/row	   2915783 rows/s	   16368 B/op	      63 allocs/op
+BenchmarkPoll/ncruces/go-sqlite3_(database/sql)-12   	   88412	     39372 ns/op	       615.8 ns/row	   1623976 rows/s	   23141 B/op	     469 allocs/op
+BenchmarkPoll/modernc.org/sqlite_(database/sql)-12   	   87523	     40563 ns/op	       634.4 ns/row	   1576310 rows/s	   38071 B/op	     471 allocs/op
+PASS
+ok  	github.com/pjstein/purego-sqlite/bench	21.628s
+
+### repetition 3/5  load { 9.99 17.88 17.02 }  01:14:02Z
+goos: darwin
+goarch: arm64
+pkg: github.com/pjstein/purego-sqlite/bench
+cpu: Apple M2 Max
+BenchmarkPoll/cgo_(same_library)-12         	  162120	     21597 ns/op	       337.8 ns/row	   2960585 rows/s	   17391 B/op	     127 allocs/op
+BenchmarkPoll/cgo_batched_(same_shim)-12    	  200408	     17455 ns/op	       273.0 ns/row	   3663048 rows/s	   17391 B/op	     127 allocs/op
+BenchmarkPoll/purego-sqlite_(native)-12     	  191863	     18226 ns/op	       285.1 ns/row	   3508030 rows/s	   33121 B/op	     263 allocs/op
+BenchmarkPoll/ncruces/go-sqlite3_(native)-12         	  163282	     21714 ns/op	       339.6 ns/row	   2944564 rows/s	   16368 B/op	      63 allocs/op
+BenchmarkPoll/ncruces/go-sqlite3_(database/sql)-12   	   90637	     39563 ns/op	       618.8 ns/row	   1616116 rows/s	   23141 B/op	     469 allocs/op
+BenchmarkPoll/modernc.org/sqlite_(database/sql)-12   	   87627	     41467 ns/op	       648.5 ns/row	   1541934 rows/s	   38071 B/op	     471 allocs/op
+PASS
+ok  	github.com/pjstein/purego-sqlite/bench	21.694s
+
+### repetition 4/5  load { 8.48 17.01 16.73 }  01:14:24Z
+goos: darwin
+goarch: arm64
+pkg: github.com/pjstein/purego-sqlite/bench
+cpu: Apple M2 Max
+BenchmarkPoll/cgo_(same_library)-12         	  162489	     21603 ns/op	       337.9 ns/row	   2959730 rows/s	   17391 B/op	     127 allocs/op
+BenchmarkPoll/cgo_batched_(same_shim)-12    	  203569	     17252 ns/op	       269.8 ns/row	   3706062 rows/s	   17391 B/op	     127 allocs/op
+BenchmarkPoll/purego-sqlite_(native)-12     	  196886	     17779 ns/op	       278.1 ns/row	   3596357 rows/s	   33121 B/op	     263 allocs/op
+BenchmarkPoll/ncruces/go-sqlite3_(native)-12         	  164533	     21259 ns/op	       332.5 ns/row	   3007654 rows/s	   16368 B/op	      63 allocs/op
+BenchmarkPoll/ncruces/go-sqlite3_(database/sql)-12   	   91178	     39039 ns/op	       610.6 ns/row	   1637833 rows/s	   23141 B/op	     469 allocs/op
+BenchmarkPoll/modernc.org/sqlite_(database/sql)-12   	   88386	     39800 ns/op	       622.5 ns/row	   1606488 rows/s	   38071 B/op	     471 allocs/op
+PASS
+ok  	github.com/pjstein/purego-sqlite/bench	21.516s
+
+### repetition 5/5  load { 6.22 15.79 16.30 }  01:14:46Z
+goos: darwin
+goarch: arm64
+pkg: github.com/pjstein/purego-sqlite/bench
+cpu: Apple M2 Max
+BenchmarkPoll/cgo_(same_library)-12         	  164724	     21294 ns/op	       333.0 ns/row	   3002667 rows/s	   17391 B/op	     127 allocs/op
+BenchmarkPoll/cgo_batched_(same_shim)-12    	  204784	     17545 ns/op	       274.4 ns/row	   3644309 rows/s	   17391 B/op	     127 allocs/op
+BenchmarkPoll/purego-sqlite_(native)-12     	  194749	     17934 ns/op	       280.5 ns/row	   3565311 rows/s	   33121 B/op	     263 allocs/op
+BenchmarkPoll/ncruces/go-sqlite3_(native)-12         	  162720	     21648 ns/op	       338.6 ns/row	   2953509 rows/s	   16368 B/op	      63 allocs/op
+BenchmarkPoll/ncruces/go-sqlite3_(database/sql)-12   	   89946	     38865 ns/op	       607.8 ns/row	   1645164 rows/s	   23141 B/op	     469 allocs/op
+BenchmarkPoll/modernc.org/sqlite_(database/sql)-12   	   86038	     40539 ns/op	       634.0 ns/row	   1577228 rows/s	   38071 B/op	     471 allocs/op
+PASS
+ok  	github.com/pjstein/purego-sqlite/bench	21.532s
+
+# machine at end: load { 5.65 15.04 16.02 }

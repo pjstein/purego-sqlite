@@ -1,0 +1,66 @@
+# Environment for the bake-off run recorded at 2026-08-09T01:24:15Z
+
+## script invocation
+bench/run-bakeoff.sh 5 30s 200000
+
+## host
+ProductName:		macOS
+ProductVersion:		26.5.2
+BuildVersion:		25F84
+Apple M2 Max
+cores: 12
+memory: 103079215104 bytes
+Darwin wildcat.local 25.5.0 Darwin Kernel Version 25.5.0: Tue Jun  9 22:28:24 PDT 2026; root:xnu-12377.121.10~1/RELEASE_ARM64_T6020 arm64
+
+## power and thermal
+Now drawing from 'AC Power'
+ -InternalBattery-0 (id=36569187)	80%; AC attached; not charging present: true
+Note: No thermal warning level has been recorded
+Note: No performance warning level has been recorded
+Note: No CPU power status has been recorded
+
+## toolchain
+go version go1.26.5 darwin/arm64
+
+## pinned SQLite (this repository compiles and ships it)
+SQLITE_VERSION=3.53.4
+SQLITE_URL=https://sqlite.org/2026/sqlite-amalgamation-3530400.zip
+SQLITE_SHA256=1e71ddf93849c6a6ecf58b827c0692073d2dd7ee40196158068f7b29f422e87d
+SQLITE_SHA3_256=628a44cfe82c66aed1ccbbe85a562d2e33ebe64b3288981ed76285612227934e
+shipped dylib sha256: f2cb875b1f15e8aebc6c5462c631ff0c3b9b51a7e89264e733aa9160f732e852
+shipped dylib size:    1438848 bytes
+
+## competitor versions (from bench/go.mod resolution)
+github.com/ncruces/go-sqlite3 v0.35.3
+modernc.org/sqlite v1.56.0
+github.com/ebitengine/purego v0.10.2
+
+## quiet gate
+quiet after 0s, load1 7.57
+
+## machine state at the start of this invocation
+load average: { 7.57 9.69 12.31 }
+top CPU consumers:
+ %CPU COMM
+ 44.2 claude
+ 39.3 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer
+ 23.5 /Applications/Claude.app/Contents/Frameworks/Claude Helper (Renderer).app/Contents/MacOS/Claude Helper (Renderer)
+ 12.3 claude
+  9.0 /Applications/Ghostty.app/Contents/MacOS/ghostty
+  5.3 claude
+  4.1 claude
+  3.6 claude
+  3.4 /System/Library/PrivateFrameworks/ChronoCore.framework/Support/chronod
+  2.1 /Applications/Backblaze.app/Contents/MacOS/bzserv
+  2.1 bash
+
+## machine state after the final round (2026-08-09T01:55:19Z)
+load average: { 10.28 10.12 11.55 }
+ %CPU COMM
+ 75.3 /Library/Backblaze.bzpkg/bztransmit
+ 25.3 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer
+ 14.3 /Applications/Claude.app/Contents/Frameworks/Claude Helper (Renderer).app/Contents/MacOS/Claude Helper (Renderer)
+ 10.2 claude
+  9.9 /Applications/Claude.app/Contents/Frameworks/Claude Helper.app/Contents/MacOS/Claude Helper
+  9.6 claude
+  9.6 /Applications/Claude.app/Contents/MacOS/Claude

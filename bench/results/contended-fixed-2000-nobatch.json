@@ -1,0 +1,328 @@
+{
+  "invocation": "/Users/pjstein/source/pjstein/purego-sqlite/bench/bin/bakeoff -duration 30s -warmup 3s -rounds 5 -readers 8 -seed 200000 -writerate 2000 -only purego -json /Users/pjstein/source/pjstein/purego-sqlite/bench/results/contended-fixed-2000-nobatch.json",
+  "row_batching_active": false,
+  "machine": {
+    "batch env": "PUREGO_SQLITE_BATCH=\"0\"",
+    "cpus": "12",
+    "go version": "go1.26.5",
+    "goarch": "arm64",
+    "goos": "darwin",
+    "measured at": "2026-08-08T21:52:00-04:00",
+    "pinned sourceid": "2026-07-24 19:02:57 bf7c7f30031888f4e796e429ab3978879485813aaca6f641c7b33e4e09459bcc",
+    "pinned sqlite": "3.53.4",
+    "row batching": "false",
+    "shipped library": "/Users/pjstein/Library/Caches/purego-sqlite/f2cb875b1f15e8ae/libsqlite3.dylib"
+  },
+  "config": {
+    "append_sql": "INSERT INTO events (stream, kind, ts, payload) VALUES (?, ?, ?, ?)",
+    "batch_env": "0",
+    "duration": "30s",
+    "payload_size": 256,
+    "pragmas": [
+      "PRAGMA busy_timeout=10000",
+      "PRAGMA journal_mode=WAL",
+      "PRAGMA synchronous=NORMAL",
+      "PRAGMA cache_size=-16000",
+      "PRAGMA foreign_keys=OFF"
+    ],
+    "readers": 8,
+    "rounds": 5,
+    "seed_rows": 200000,
+    "tail_limit": 64,
+    "tail_sql": "SELECT seq, kind, ts, payload FROM events WHERE seq \u003e ? ORDER BY seq LIMIT 64",
+    "warmup": "3s",
+    "write_rate": 2000
+  },
+  "capabilities": [
+    {
+      "compile-options-reported": "44",
+      "double-quoted-strings-rejected": "1",
+      "driver": "purego-sqlite (native)",
+      "fts5": "1",
+      "fts5-usable": "yes",
+      "math-functions": "1",
+      "sqlite-version": "3.53.4",
+      "stat4": "1",
+      "threading-mode": "THREADSAFE=2"
+    }
+  ],
+  "round_states": [
+    {
+      "at": "2026-08-08T21:52:20.969223-04:00",
+      "load_1min": 8.61,
+      "load_5min": 10.63,
+      "load_15min": 12.06,
+      "build_processes": [],
+      "busy_processes": [
+        "bztransmit 99%",
+        "Google Chrome Helper (Renderer) 95%",
+        "Google Chrome Helper (Renderer) 35%",
+        "claude 18%"
+      ],
+      "total_cpu_percent": 309.9,
+      "power_source": "Now drawing from 'AC Power'",
+      "thermal": "no thermal warning recorded"
+    },
+    {
+      "at": "2026-08-08T21:52:54.634921-04:00",
+      "load_1min": 8.31,
+      "load_5min": 10.36,
+      "load_15min": 11.91,
+      "build_processes": [],
+      "busy_processes": [
+        "bakeoff 423%",
+        "bztransmit 82%",
+        "claude 20%"
+      ],
+      "total_cpu_percent": 587.7,
+      "power_source": "Now drawing from 'AC Power'",
+      "thermal": "no thermal warning recorded"
+    },
+    {
+      "at": "2026-08-08T21:53:28.329537-04:00",
+      "load_1min": 8.08,
+      "load_5min": 10.07,
+      "load_15min": 11.74,
+      "build_processes": [],
+      "busy_processes": [
+        "bakeoff 552%",
+        "bztransmit 78%",
+        "claude 19%"
+      ],
+      "total_cpu_percent": 699.0999999999999,
+      "power_source": "Now drawing from 'AC Power'",
+      "thermal": "no thermal warning recorded"
+    },
+    {
+      "at": "2026-08-08T21:54:02.019055-04:00",
+      "load_1min": 8.91,
+      "load_5min": 10.07,
+      "load_15min": 11.67,
+      "build_processes": [],
+      "busy_processes": [
+        "bakeoff 427%",
+        "bztransmit 83%",
+        "claude 18%"
+      ],
+      "total_cpu_percent": 568.0999999999999,
+      "power_source": "Now drawing from 'AC Power'",
+      "thermal": "no thermal warning recorded"
+    },
+    {
+      "at": "2026-08-08T21:54:45.796413-04:00",
+      "load_1min": 8.58,
+      "load_5min": 9.88,
+      "load_15min": 11.53,
+      "build_processes": [],
+      "busy_processes": [
+        "bztransmit 99%",
+        "claude 24%"
+      ],
+      "total_cpu_percent": 185.39999999999998,
+      "power_source": "Now drawing from 'AC Power'",
+      "thermal": "no thermal warning recorded"
+    }
+  ],
+  "results": [
+    {
+      "driver": "purego-sqlite (native)",
+      "round": 1,
+      "slot": 1,
+      "seconds": 30.00008225,
+      "write_rate_target": 2000,
+      "appends": 60000,
+      "appends_per_sec": 1999.9945166817001,
+      "reader_polls": [
+        169800,
+        166811,
+        164113,
+        144645,
+        135082,
+        150943,
+        165532,
+        168972
+      ],
+      "reader_rows": [
+        10864418,
+        10673441,
+        10500576,
+        9255083,
+        8643227,
+        9658222,
+        10591779,
+        10811874
+      ],
+      "polls_per_sec_min": 4502.72098837329,
+      "polls_per_sec_median": 5494.068270429492,
+      "polls_per_sec_max": 5659.984482209212,
+      "polls_per_sec_aggregate": 42196.48431130552,
+      "rows_per_sec_aggregate": 2699946.5976464115,
+      "fairness_ratio_max_over_min": 1.2570142580062482,
+      "latency_p50_us": 131.334,
+      "latency_p99_us": 667.833,
+      "latency_p999_us": 1010,
+      "latency_samples": 800000,
+      "started_at": "2026-08-08T21:52:21.488087-04:00"
+    },
+    {
+      "driver": "purego-sqlite (native)",
+      "round": 2,
+      "slot": 1,
+      "seconds": 30.000021916,
+      "write_rate_target": 2000,
+      "appends": 60000,
+      "appends_per_sec": 1999.9985389344006,
+      "reader_polls": [
+        167878,
+        167673,
+        164812,
+        163995,
+        144539,
+        134587,
+        150073,
+        165704
+      ],
+      "reader_rows": [
+        10741978,
+        10728415,
+        10545414,
+        10493409,
+        9248371,
+        8611555,
+        9602708,
+        10602721
+      ],
+      "polls_per_sec_min": 4486.230055992736,
+      "polls_per_sec_median": 5480.112663261695,
+      "polls_per_sec_max": 5595.929245320488,
+      "polls_per_sec_aggregate": 41975.33600228454,
+      "rows_per_sec_aggregate": 2685817.0712544355,
+      "fairness_ratio_max_over_min": 1.24735672836158,
+      "latency_p50_us": 131.208,
+      "latency_p99_us": 662.959,
+      "latency_p999_us": 973.625,
+      "latency_samples": 800000,
+      "started_at": "2026-08-08T21:52:55.185855-04:00"
+    },
+    {
+      "driver": "purego-sqlite (native)",
+      "round": 3,
+      "slot": 1,
+      "seconds": 30.000016167,
+      "write_rate_target": 2000,
+      "appends": 60000,
+      "appends_per_sec": 1999.9989222005809,
+      "reader_polls": [
+        155877,
+        154266,
+        153711,
+        152482,
+        166926,
+        145126,
+        136013,
+        154246
+      ],
+      "reader_rows": [
+        9973785,
+        9870891,
+        9834781,
+        9756567,
+        10680419,
+        9286065,
+        8702806,
+        9869454
+      ],
+      "polls_per_sec_min": 4533.764223421127,
+      "polls_per_sec_median": 5132.613900701035,
+      "polls_per_sec_max": 5564.197001454237,
+      "polls_per_sec_aggregate": 40621.54477571619,
+      "rows_per_sec_aggregate": 2599157.532647339,
+      "fairness_ratio_max_over_min": 1.2272797453184623,
+      "latency_p50_us": 143.291,
+      "latency_p99_us": 667.583,
+      "latency_p999_us": 973.334,
+      "latency_samples": 800000,
+      "started_at": "2026-08-08T21:53:28.864614-04:00"
+    },
+    {
+      "driver": "purego-sqlite (native)",
+      "round": 4,
+      "slot": 1,
+      "seconds": 30.000065125,
+      "write_rate_target": 2000,
+      "appends": 60000,
+      "appends_per_sec": 1999.9956583427584,
+      "reader_polls": [
+        166968,
+        165294,
+        163542,
+        165135,
+        162388,
+        143175,
+        134381,
+        151086
+      ],
+      "reader_rows": [
+        10683417,
+        10576610,
+        10464136,
+        10566180,
+        10390035,
+        9160993,
+        8598630,
+        9667037
+      ],
+      "polls_per_sec_min": 4479.356942729303,
+      "polls_per_sec_median": 5432.154874363794,
+      "polls_per_sec_max": 5565.587918036228,
+      "polls_per_sec_aggregate": 41732.20940632875,
+      "rows_per_sec_aggregate": 2670228.803378306,
+      "fairness_ratio_max_over_min": 1.2424970792001846,
+      "latency_p50_us": 133.208,
+      "latency_p99_us": 679.208,
+      "latency_p999_us": 1025.167,
+      "latency_samples": 800000,
+      "started_at": "2026-08-08T21:54:02.573616-04:00"
+    },
+    {
+      "driver": "purego-sqlite (native)",
+      "round": 5,
+      "slot": 1,
+      "seconds": 30.000029334,
+      "write_rate_target": 2000,
+      "appends": 60000,
+      "appends_per_sec": 1999.9980444019122,
+      "reader_polls": [
+        169313,
+        166606,
+        164280,
+        144281,
+        135653,
+        150913,
+        164349,
+        166962
+      ],
+      "reader_rows": [
+        10833613,
+        10660356,
+        10511373,
+        9231994,
+        8679723,
+        9656130,
+        10515907,
+        10683066
+      ],
+      "polls_per_sec_min": 4521.762245287543,
+      "polls_per_sec_median": 5477.144644447966,
+      "polls_per_sec_max": 5643.761148197016,
+      "polls_per_sec_aggregate": 42078.52552228441,
+      "rows_per_sec_aggregate": 2692402.767368574,
+      "fairness_ratio_max_over_min": 1.248133104317634,
+      "latency_p50_us": 129.917,
+      "latency_p99_us": 656.583,
+      "latency_p999_us": 983.291,
+      "latency_samples": 800000,
+      "started_at": "2026-08-08T21:54:46.339063-04:00"
+    }
+  ]
+}

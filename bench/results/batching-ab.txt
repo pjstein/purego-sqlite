@@ -1,0 +1,597 @@
+# Interleaved A/B of the row-batching shim
+# rounds alternate: batching ON, batching OFF, ON, OFF, ...
+# each round is a separate one-round invocation of:
+#   /Users/pjstein/source/pjstein/purego-sqlite/bench/bin/bakeoff -duration 30s -warmup 3s -rounds 1 -readers 8 -seed 200000 -writerate 2000 -only purego
+# with PUREGO_SQLITE_BATCH unset (on) or =0 (off)
+# written 2026-08-09T01:17:56Z
+
+########## pair 1/5  batching=on  load { 3.65 10.07 13.75 }
+== invocation (re-run this verbatim to reproduce)
+   PUREGO_SQLITE_BATCH="" /Users/pjstein/source/pjstein/purego-sqlite/bench/bin/bakeoff -duration 30s -warmup 3s -rounds 1 -readers 8 -seed 200000 -writerate 2000 -only purego -json /Users/pjstein/source/pjstein/purego-sqlite/bench/results/batching-ab-on-1.json
+   row batching in this process: true
+
+== machine and toolchain
+   batch env          PUREGO_SQLITE_BATCH=""
+   cpus               12
+   go version         go1.26.5
+   goarch             arm64
+   goos               darwin
+   measured at        2026-08-08T21:17:56-04:00
+   pinned sourceid    2026-07-24 19:02:57 bf7c7f30031888f4e796e429ab3978879485813aaca6f641c7b33e4e09459bcc
+   pinned sqlite      3.53.4
+   row batching       true
+   shipped library    /Users/pjstein/Library/Caches/purego-sqlite/f2cb875b1f15e8ae/libsqlite3.dylib
+
+== 1 drivers under test, interleaved with a rotating order: every round runs each once, and each driver takes every slot across rounds
+   1. purego-sqlite (native)
+
+== build capabilities (reported, not asserted: a build without FTS5 is a different build, not a wrong one)
+   driver                             sqlite           threadsafe       fts5-usable      stat4            math             DQS=0           
+   purego-sqlite (native)             3.53.4           THREADSAFE=2     yes              1                1                1               
+
+== workload: 1 writer + 8 readers, 30s measured per run after 3s warmup, 1 rounds, 200000 events pre-seeded
+   writer capped at 2000 appends/s so readers are compared under identical write pressure
+   append: INSERT INTO events (stream, kind, ts, payload) VALUES (?, ?, ?, ?)
+   tail:   SELECT seq, kind, ts, payload FROM events WHERE seq > ? ORDER BY seq LIMIT 64
+
+########## ROUND 1/1
+   machine: load 3.65/10.07/13.75  cpu 199%  no build tools running  busy: XprotectService 62%, ghostty 61%
+   order:   purego-sqlite (native)
+
+-- purego-sqlite (native)  round 1 slot 1  (30.0s measured)
+   writer            2000 appends/s  (60001 appends committed)
+   readers     min    14156   median    14754   max    15675  polls/s   (max/min 1.11)
+   aggregate       118486 polls/s        7581328 rows/s   over 8 readers
+   latency     p50    45.2us   p99    314.3us   p99.9     500.2us   (800000 samples)
+   subjects    3554586 reader polls, 227440438 rows read -- a run with zero of either is a failed run, not a fast one
+
+== summary over 1 rounds: mean +/- sample stddev (min, max, n)
+   a trailing ! marks a metric whose stddev exceeds 10% of its mean
+
+   purego-sqlite (native)
+      appends/s        2000 +/- 0  (min 2000, max 2000, n=1)
+      min polls/s      14156 +/- 0  (min 14156, max 14156, n=1)
+      median polls/s   14754 +/- 0  (min 14754, max 14754, n=1)
+      rows/s aggregate 7581328 +/- 0  (min 7581328, max 7581328, n=1)
+      fairness max/min 1.107 +/- 0.000 (min 1.107, max 1.107)
+      p50 latency      45 +/- 0  (min 45, max 45, n=1) us
+      p99 latency      314 +/- 0  (min 314, max 314, n=1) us
+      errors           0
+
+   one-line table (mean median-polls/s +/- stddev)
+   driver                                    appends/s      min polls/s      med polls/s       p99 us
+   purego-sqlite (native)                  2000+/-0        14156+/-0         14754+/-0         314+/-0   
+
+wrote /Users/pjstein/source/pjstein/purego-sqlite/bench/results/batching-ab-on-1.json
+
+########## pair 1/5  batching=off  load { 6.06 10.03 13.61 }
+== invocation (re-run this verbatim to reproduce)
+   PUREGO_SQLITE_BATCH="0" /Users/pjstein/source/pjstein/purego-sqlite/bench/bin/bakeoff -duration 30s -warmup 3s -rounds 1 -readers 8 -seed 200000 -writerate 2000 -only purego -json /Users/pjstein/source/pjstein/purego-sqlite/bench/results/batching-ab-off-1.json
+   row batching in this process: false
+
+== machine and toolchain
+   batch env          PUREGO_SQLITE_BATCH="0"
+   cpus               12
+   go version         go1.26.5
+   goarch             arm64
+   goos               darwin
+   measured at        2026-08-08T21:18:30-04:00
+   pinned sourceid    2026-07-24 19:02:57 bf7c7f30031888f4e796e429ab3978879485813aaca6f641c7b33e4e09459bcc
+   pinned sqlite      3.53.4
+   row batching       false
+   shipped library    /Users/pjstein/Library/Caches/purego-sqlite/f2cb875b1f15e8ae/libsqlite3.dylib
+
+== 1 drivers under test, interleaved with a rotating order: every round runs each once, and each driver takes every slot across rounds
+   1. purego-sqlite (native)
+
+== build capabilities (reported, not asserted: a build without FTS5 is a different build, not a wrong one)
+   driver                             sqlite           threadsafe       fts5-usable      stat4            math             DQS=0           
+   purego-sqlite (native)             3.53.4           THREADSAFE=2     yes              1                1                1               
+
+== workload: 1 writer + 8 readers, 30s measured per run after 3s warmup, 1 rounds, 200000 events pre-seeded
+   writer capped at 2000 appends/s so readers are compared under identical write pressure
+   append: INSERT INTO events (stream, kind, ts, payload) VALUES (?, ?, ?, ?)
+   tail:   SELECT seq, kind, ts, payload FROM events WHERE seq > ? ORDER BY seq LIMIT 64
+
+########## ROUND 1/1
+   machine: load 6.06/10.03/13.61  cpu 47%  no build tools running
+   order:   purego-sqlite (native)
+
+-- purego-sqlite (native)  round 1 slot 1  (30.0s measured)
+   writer            2000 appends/s  (60001 appends committed)
+   readers     min     4602   median     5617   max     5731  polls/s   (max/min 1.25)
+   aggregate        42932 polls/s        2746994 rows/s   over 8 readers
+   latency     p50   130.2us   p99    645.1us   p99.9     935.0us   (800000 samples)
+   subjects    1287960 reader polls, 82409951 rows read -- a run with zero of either is a failed run, not a fast one
+
+== summary over 1 rounds: mean +/- sample stddev (min, max, n)
+   a trailing ! marks a metric whose stddev exceeds 10% of its mean
+
+   purego-sqlite (native)
+      appends/s        2000 +/- 0  (min 2000, max 2000, n=1)
+      min polls/s      4602 +/- 0  (min 4602, max 4602, n=1)
+      median polls/s   5617 +/- 0  (min 5617, max 5617, n=1)
+      rows/s aggregate 2746994 +/- 0  (min 2746994, max 2746994, n=1)
+      fairness max/min 1.245 +/- 0.000 (min 1.245, max 1.245)
+      p50 latency      130 +/- 0  (min 130, max 130, n=1) us
+      p99 latency      645 +/- 0  (min 645, max 645, n=1) us
+      errors           0
+
+   one-line table (mean median-polls/s +/- stddev)
+   driver                                    appends/s      min polls/s      med polls/s       p99 us
+   purego-sqlite (native)                  2000+/-0         4602+/-0          5617+/-0         645+/-0   
+
+wrote /Users/pjstein/source/pjstein/purego-sqlite/bench/results/batching-ab-off-1.json
+
+########## pair 2/5  batching=on  load { 6.54 9.68 13.34 }
+== invocation (re-run this verbatim to reproduce)
+   PUREGO_SQLITE_BATCH="" /Users/pjstein/source/pjstein/purego-sqlite/bench/bin/bakeoff -duration 30s -warmup 3s -rounds 1 -readers 8 -seed 200000 -writerate 2000 -only purego -json /Users/pjstein/source/pjstein/purego-sqlite/bench/results/batching-ab-on-2.json
+   row batching in this process: true
+
+== machine and toolchain
+   batch env          PUREGO_SQLITE_BATCH=""
+   cpus               12
+   go version         go1.26.5
+   goarch             arm64
+   goos               darwin
+   measured at        2026-08-08T21:19:04-04:00
+   pinned sourceid    2026-07-24 19:02:57 bf7c7f30031888f4e796e429ab3978879485813aaca6f641c7b33e4e09459bcc
+   pinned sqlite      3.53.4
+   row batching       true
+   shipped library    /Users/pjstein/Library/Caches/purego-sqlite/f2cb875b1f15e8ae/libsqlite3.dylib
+
+== 1 drivers under test, interleaved with a rotating order: every round runs each once, and each driver takes every slot across rounds
+   1. purego-sqlite (native)
+
+== build capabilities (reported, not asserted: a build without FTS5 is a different build, not a wrong one)
+   driver                             sqlite           threadsafe       fts5-usable      stat4            math             DQS=0           
+   purego-sqlite (native)             3.53.4           THREADSAFE=2     yes              1                1                1               
+
+== workload: 1 writer + 8 readers, 30s measured per run after 3s warmup, 1 rounds, 200000 events pre-seeded
+   writer capped at 2000 appends/s so readers are compared under identical write pressure
+   append: INSERT INTO events (stream, kind, ts, payload) VALUES (?, ?, ?, ?)
+   tail:   SELECT seq, kind, ts, payload FROM events WHERE seq > ? ORDER BY seq LIMIT 64
+
+########## ROUND 1/1
+   machine: load 6.54/9.68/13.34  cpu 69%  no build tools running  busy: WindowServer 20%
+   order:   purego-sqlite (native)
+
+-- purego-sqlite (native)  round 1 slot 1  (30.0s measured)
+   writer            2000 appends/s  (60001 appends committed)
+   readers     min    13905   median    14371   max    15224  polls/s   (max/min 1.09)
+   aggregate       115890 polls/s        7415195 rows/s   over 8 readers
+   latency     p50    45.8us   p99    319.4us   p99.9     512.6us   (800000 samples)
+   subjects    3476731 reader polls, 222457697 rows read -- a run with zero of either is a failed run, not a fast one
+
+== summary over 1 rounds: mean +/- sample stddev (min, max, n)
+   a trailing ! marks a metric whose stddev exceeds 10% of its mean
+
+   purego-sqlite (native)
+      appends/s        2000 +/- 0  (min 2000, max 2000, n=1)
+      min polls/s      13905 +/- 0  (min 13905, max 13905, n=1)
+      median polls/s   14371 +/- 0  (min 14371, max 14371, n=1)
+      rows/s aggregate 7415195 +/- 0  (min 7415195, max 7415195, n=1)
+      fairness max/min 1.095 +/- 0.000 (min 1.095, max 1.095)
+      p50 latency      46 +/- 0  (min 46, max 46, n=1) us
+      p99 latency      319 +/- 0  (min 319, max 319, n=1) us
+      errors           0
+
+   one-line table (mean median-polls/s +/- stddev)
+   driver                                    appends/s      min polls/s      med polls/s       p99 us
+   purego-sqlite (native)                  2000+/-0        13905+/-0         14371+/-0         319+/-0   
+
+wrote /Users/pjstein/source/pjstein/purego-sqlite/bench/results/batching-ab-on-2.json
+
+########## pair 2/5  batching=off  load { 8.45 9.84 13.25 }
+== invocation (re-run this verbatim to reproduce)
+   PUREGO_SQLITE_BATCH="0" /Users/pjstein/source/pjstein/purego-sqlite/bench/bin/bakeoff -duration 30s -warmup 3s -rounds 1 -readers 8 -seed 200000 -writerate 2000 -only purego -json /Users/pjstein/source/pjstein/purego-sqlite/bench/results/batching-ab-off-2.json
+   row batching in this process: false
+
+== machine and toolchain
+   batch env          PUREGO_SQLITE_BATCH="0"
+   cpus               12
+   go version         go1.26.5
+   goarch             arm64
+   goos               darwin
+   measured at        2026-08-08T21:19:37-04:00
+   pinned sourceid    2026-07-24 19:02:57 bf7c7f30031888f4e796e429ab3978879485813aaca6f641c7b33e4e09459bcc
+   pinned sqlite      3.53.4
+   row batching       false
+   shipped library    /Users/pjstein/Library/Caches/purego-sqlite/f2cb875b1f15e8ae/libsqlite3.dylib
+
+== 1 drivers under test, interleaved with a rotating order: every round runs each once, and each driver takes every slot across rounds
+   1. purego-sqlite (native)
+
+== build capabilities (reported, not asserted: a build without FTS5 is a different build, not a wrong one)
+   driver                             sqlite           threadsafe       fts5-usable      stat4            math             DQS=0           
+   purego-sqlite (native)             3.53.4           THREADSAFE=2     yes              1                1                1               
+
+== workload: 1 writer + 8 readers, 30s measured per run after 3s warmup, 1 rounds, 200000 events pre-seeded
+   writer capped at 2000 appends/s so readers are compared under identical write pressure
+   append: INSERT INTO events (stream, kind, ts, payload) VALUES (?, ?, ?, ?)
+   tail:   SELECT seq, kind, ts, payload FROM events WHERE seq > ? ORDER BY seq LIMIT 64
+
+########## ROUND 1/1
+   machine: load 8.45/9.84/13.25  cpu 155%  no build tools running  busy: Google Chrome Helper (Renderer) 55%, claude 34%, claude 15%
+   order:   purego-sqlite (native)
+
+-- purego-sqlite (native)  round 1 slot 1  (30.0s measured)
+   writer            2000 appends/s  (60000 appends committed)
+   readers     min     4564   median     5612   max     5675  polls/s   (max/min 1.24)
+   aggregate        42731 polls/s        2734112 rows/s   over 8 readers
+   latency     p50   131.7us   p99    649.0us   p99.9     901.8us   (800000 samples)
+   subjects    1281945 reader polls, 82023673 rows read -- a run with zero of either is a failed run, not a fast one
+
+== summary over 1 rounds: mean +/- sample stddev (min, max, n)
+   a trailing ! marks a metric whose stddev exceeds 10% of its mean
+
+   purego-sqlite (native)
+      appends/s        2000 +/- 0  (min 2000, max 2000, n=1)
+      min polls/s      4564 +/- 0  (min 4564, max 4564, n=1)
+      median polls/s   5612 +/- 0  (min 5612, max 5612, n=1)
+      rows/s aggregate 2734112 +/- 0  (min 2734112, max 2734112, n=1)
+      fairness max/min 1.244 +/- 0.000 (min 1.244, max 1.244)
+      p50 latency      132 +/- 0  (min 132, max 132, n=1) us
+      p99 latency      649 +/- 0  (min 649, max 649, n=1) us
+      errors           0
+
+   one-line table (mean median-polls/s +/- stddev)
+   driver                                    appends/s      min polls/s      med polls/s       p99 us
+   purego-sqlite (native)                  2000+/-0         4564+/-0          5612+/-0         649+/-0   
+
+wrote /Users/pjstein/source/pjstein/purego-sqlite/bench/results/batching-ab-off-2.json
+
+########## pair 3/5  batching=on  load { 9.35 9.92 13.14 }
+== invocation (re-run this verbatim to reproduce)
+   PUREGO_SQLITE_BATCH="" /Users/pjstein/source/pjstein/purego-sqlite/bench/bin/bakeoff -duration 30s -warmup 3s -rounds 1 -readers 8 -seed 200000 -writerate 2000 -only purego -json /Users/pjstein/source/pjstein/purego-sqlite/bench/results/batching-ab-on-3.json
+   row batching in this process: true
+
+== machine and toolchain
+   batch env          PUREGO_SQLITE_BATCH=""
+   cpus               12
+   go version         go1.26.5
+   goarch             arm64
+   goos               darwin
+   measured at        2026-08-08T21:20:11-04:00
+   pinned sourceid    2026-07-24 19:02:57 bf7c7f30031888f4e796e429ab3978879485813aaca6f641c7b33e4e09459bcc
+   pinned sqlite      3.53.4
+   row batching       true
+   shipped library    /Users/pjstein/Library/Caches/purego-sqlite/f2cb875b1f15e8ae/libsqlite3.dylib
+
+== 1 drivers under test, interleaved with a rotating order: every round runs each once, and each driver takes every slot across rounds
+   1. purego-sqlite (native)
+
+== build capabilities (reported, not asserted: a build without FTS5 is a different build, not a wrong one)
+   driver                             sqlite           threadsafe       fts5-usable      stat4            math             DQS=0           
+   purego-sqlite (native)             3.53.4           THREADSAFE=2     yes              1                1                1               
+
+== workload: 1 writer + 8 readers, 30s measured per run after 3s warmup, 1 rounds, 200000 events pre-seeded
+   writer capped at 2000 appends/s so readers are compared under identical write pressure
+   append: INSERT INTO events (stream, kind, ts, payload) VALUES (?, ?, ?, ?)
+   tail:   SELECT seq, kind, ts, payload FROM events WHERE seq > ? ORDER BY seq LIMIT 64
+
+########## ROUND 1/1
+   machine: load 9.35/9.92/13.14  cpu 43%  no build tools running  [NOT QUIET -- results from this round are suspect]
+   order:   purego-sqlite (native)
+
+-- purego-sqlite (native)  round 1 slot 1  (30.0s measured)
+   writer            2000 appends/s  (60001 appends committed)
+   readers     min    14254   median    15186   max    15736  polls/s   (max/min 1.10)
+   aggregate       120389 polls/s        7703084 rows/s   over 8 readers
+   latency     p50    44.6us   p99    307.8us   p99.9     484.7us   (800000 samples)
+   subjects    3611678 reader polls, 231092656 rows read -- a run with zero of either is a failed run, not a fast one
+
+== summary over 1 rounds: mean +/- sample stddev (min, max, n)
+   a trailing ! marks a metric whose stddev exceeds 10% of its mean
+
+   purego-sqlite (native)
+      appends/s        2000 +/- 0  (min 2000, max 2000, n=1)
+      min polls/s      14254 +/- 0  (min 14254, max 14254, n=1)
+      median polls/s   15186 +/- 0  (min 15186, max 15186, n=1)
+      rows/s aggregate 7703084 +/- 0  (min 7703084, max 7703084, n=1)
+      fairness max/min 1.104 +/- 0.000 (min 1.104, max 1.104)
+      p50 latency      45 +/- 0  (min 45, max 45, n=1) us
+      p99 latency      308 +/- 0  (min 308, max 308, n=1) us
+      errors           0
+
+   one-line table (mean median-polls/s +/- stddev)
+   driver                                    appends/s      min polls/s      med polls/s       p99 us
+   purego-sqlite (native)                  2000+/-0        14254+/-0         15186+/-0         308+/-0   
+
+wrote /Users/pjstein/source/pjstein/purego-sqlite/bench/results/batching-ab-on-3.json
+
+########## pair 3/5  batching=off  load { 8.76 9.72 12.95 }
+== invocation (re-run this verbatim to reproduce)
+   PUREGO_SQLITE_BATCH="0" /Users/pjstein/source/pjstein/purego-sqlite/bench/bin/bakeoff -duration 30s -warmup 3s -rounds 1 -readers 8 -seed 200000 -writerate 2000 -only purego -json /Users/pjstein/source/pjstein/purego-sqlite/bench/results/batching-ab-off-3.json
+   row batching in this process: false
+
+== machine and toolchain
+   batch env          PUREGO_SQLITE_BATCH="0"
+   cpus               12
+   go version         go1.26.5
+   goarch             arm64
+   goos               darwin
+   measured at        2026-08-08T21:20:44-04:00
+   pinned sourceid    2026-07-24 19:02:57 bf7c7f30031888f4e796e429ab3978879485813aaca6f641c7b33e4e09459bcc
+   pinned sqlite      3.53.4
+   row batching       false
+   shipped library    /Users/pjstein/Library/Caches/purego-sqlite/f2cb875b1f15e8ae/libsqlite3.dylib
+
+== 1 drivers under test, interleaved with a rotating order: every round runs each once, and each driver takes every slot across rounds
+   1. purego-sqlite (native)
+
+== build capabilities (reported, not asserted: a build without FTS5 is a different build, not a wrong one)
+   driver                             sqlite           threadsafe       fts5-usable      stat4            math             DQS=0           
+   purego-sqlite (native)             3.53.4           THREADSAFE=2     yes              1                1                1               
+
+== workload: 1 writer + 8 readers, 30s measured per run after 3s warmup, 1 rounds, 200000 events pre-seeded
+   writer capped at 2000 appends/s so readers are compared under identical write pressure
+   append: INSERT INTO events (stream, kind, ts, payload) VALUES (?, ?, ?, ?)
+   tail:   SELECT seq, kind, ts, payload FROM events WHERE seq > ? ORDER BY seq LIMIT 64
+
+########## ROUND 1/1
+   machine: load 8.76/9.72/12.95  cpu 54%  no build tools running  busy: claude 22%
+   order:   purego-sqlite (native)
+
+-- purego-sqlite (native)  round 1 slot 1  (30.0s measured)
+   writer            2000 appends/s  (60000 appends committed)
+   readers     min     4528   median     5132   max     5687  polls/s   (max/min 1.26)
+   aggregate        41330 polls/s        2644499 rows/s   over 8 readers
+   latency     p50   140.6us   p99    668.0us   p99.9     954.2us   (800000 samples)
+   subjects    1239912 reader polls, 79335260 rows read -- a run with zero of either is a failed run, not a fast one
+
+== summary over 1 rounds: mean +/- sample stddev (min, max, n)
+   a trailing ! marks a metric whose stddev exceeds 10% of its mean
+
+   purego-sqlite (native)
+      appends/s        2000 +/- 0  (min 2000, max 2000, n=1)
+      min polls/s      4528 +/- 0  (min 4528, max 4528, n=1)
+      median polls/s   5132 +/- 0  (min 5132, max 5132, n=1)
+      rows/s aggregate 2644499 +/- 0  (min 2644499, max 2644499, n=1)
+      fairness max/min 1.256 +/- 0.000 (min 1.256, max 1.256)
+      p50 latency      141 +/- 0  (min 141, max 141, n=1) us
+      p99 latency      668 +/- 0  (min 668, max 668, n=1) us
+      errors           0
+
+   one-line table (mean median-polls/s +/- stddev)
+   driver                                    appends/s      min polls/s      med polls/s       p99 us
+   purego-sqlite (native)                  2000+/-0         4528+/-0          5132+/-0         668+/-0   
+
+wrote /Users/pjstein/source/pjstein/purego-sqlite/bench/results/batching-ab-off-3.json
+
+########## pair 4/5  batching=on  load { 10.76 10.11 12.97 }
+== invocation (re-run this verbatim to reproduce)
+   PUREGO_SQLITE_BATCH="" /Users/pjstein/source/pjstein/purego-sqlite/bench/bin/bakeoff -duration 30s -warmup 3s -rounds 1 -readers 8 -seed 200000 -writerate 2000 -only purego -json /Users/pjstein/source/pjstein/purego-sqlite/bench/results/batching-ab-on-4.json
+   row batching in this process: true
+
+== machine and toolchain
+   batch env          PUREGO_SQLITE_BATCH=""
+   cpus               12
+   go version         go1.26.5
+   goarch             arm64
+   goos               darwin
+   measured at        2026-08-08T21:21:18-04:00
+   pinned sourceid    2026-07-24 19:02:57 bf7c7f30031888f4e796e429ab3978879485813aaca6f641c7b33e4e09459bcc
+   pinned sqlite      3.53.4
+   row batching       true
+   shipped library    /Users/pjstein/Library/Caches/purego-sqlite/f2cb875b1f15e8ae/libsqlite3.dylib
+
+== 1 drivers under test, interleaved with a rotating order: every round runs each once, and each driver takes every slot across rounds
+   1. purego-sqlite (native)
+
+== build capabilities (reported, not asserted: a build without FTS5 is a different build, not a wrong one)
+   driver                             sqlite           threadsafe       fts5-usable      stat4            math             DQS=0           
+   purego-sqlite (native)             3.53.4           THREADSAFE=2     yes              1                1                1               
+
+== workload: 1 writer + 8 readers, 30s measured per run after 3s warmup, 1 rounds, 200000 events pre-seeded
+   writer capped at 2000 appends/s so readers are compared under identical write pressure
+   append: INSERT INTO events (stream, kind, ts, payload) VALUES (?, ?, ?, ?)
+   tail:   SELECT seq, kind, ts, payload FROM events WHERE seq > ? ORDER BY seq LIMIT 64
+
+########## ROUND 1/1
+   machine: load 10.76/10.11/12.97  cpu 85%  no build tools running  busy: WindowServer 34%  [NOT QUIET -- results from this round are suspect]
+   order:   purego-sqlite (native)
+
+-- purego-sqlite (native)  round 1 slot 1  (30.0s measured)
+   writer            2000 appends/s  (60000 appends committed)
+   readers     min    13760   median    14549   max    14831  polls/s   (max/min 1.08)
+   aggregate       115482 polls/s        7389046 rows/s   over 8 readers
+   latency     p50    45.0us   p99    326.0us   p99.9     561.3us   (800000 samples)
+   subjects    3464473 reader polls, 221671935 rows read -- a run with zero of either is a failed run, not a fast one
+
+== summary over 1 rounds: mean +/- sample stddev (min, max, n)
+   a trailing ! marks a metric whose stddev exceeds 10% of its mean
+
+   purego-sqlite (native)
+      appends/s        2000 +/- 0  (min 2000, max 2000, n=1)
+      min polls/s      13760 +/- 0  (min 13760, max 13760, n=1)
+      median polls/s   14549 +/- 0  (min 14549, max 14549, n=1)
+      rows/s aggregate 7389046 +/- 0  (min 7389046, max 7389046, n=1)
+      fairness max/min 1.078 +/- 0.000 (min 1.078, max 1.078)
+      p50 latency      45 +/- 0  (min 45, max 45, n=1) us
+      p99 latency      326 +/- 0  (min 326, max 326, n=1) us
+      errors           0
+
+   one-line table (mean median-polls/s +/- stddev)
+   driver                                    appends/s      min polls/s      med polls/s       p99 us
+   purego-sqlite (native)                  2000+/-0        13760+/-0         14549+/-0         326+/-0   
+
+wrote /Users/pjstein/source/pjstein/purego-sqlite/bench/results/batching-ab-on-4.json
+
+########## pair 4/5  batching=off  load { 12.19 10.46 12.97 }
+== invocation (re-run this verbatim to reproduce)
+   PUREGO_SQLITE_BATCH="0" /Users/pjstein/source/pjstein/purego-sqlite/bench/bin/bakeoff -duration 30s -warmup 3s -rounds 1 -readers 8 -seed 200000 -writerate 2000 -only purego -json /Users/pjstein/source/pjstein/purego-sqlite/bench/results/batching-ab-off-4.json
+   row batching in this process: false
+
+== machine and toolchain
+   batch env          PUREGO_SQLITE_BATCH="0"
+   cpus               12
+   go version         go1.26.5
+   goarch             arm64
+   goos               darwin
+   measured at        2026-08-08T21:21:52-04:00
+   pinned sourceid    2026-07-24 19:02:57 bf7c7f30031888f4e796e429ab3978879485813aaca6f641c7b33e4e09459bcc
+   pinned sqlite      3.53.4
+   row batching       false
+   shipped library    /Users/pjstein/Library/Caches/purego-sqlite/f2cb875b1f15e8ae/libsqlite3.dylib
+
+== 1 drivers under test, interleaved with a rotating order: every round runs each once, and each driver takes every slot across rounds
+   1. purego-sqlite (native)
+
+== build capabilities (reported, not asserted: a build without FTS5 is a different build, not a wrong one)
+   driver                             sqlite           threadsafe       fts5-usable      stat4            math             DQS=0           
+   purego-sqlite (native)             3.53.4           THREADSAFE=2     yes              1                1                1               
+
+== workload: 1 writer + 8 readers, 30s measured per run after 3s warmup, 1 rounds, 200000 events pre-seeded
+   writer capped at 2000 appends/s so readers are compared under identical write pressure
+   append: INSERT INTO events (stream, kind, ts, payload) VALUES (?, ?, ?, ?)
+   tail:   SELECT seq, kind, ts, payload FROM events WHERE seq > ? ORDER BY seq LIMIT 64
+
+########## ROUND 1/1
+   machine: load 12.19/10.46/12.97  cpu 270%  no build tools running  busy: contactsd 77%, suggestd 32%, WindowServer 28%, Spotlight 23%  [NOT QUIET -- results from this round are suspect]
+   order:   purego-sqlite (native)
+
+-- purego-sqlite (native)  round 1 slot 1  (30.0s measured)
+   writer            2000 appends/s  (60000 appends committed)
+   readers     min     4411   median     5361   max     5420  polls/s   (max/min 1.23)
+   aggregate        40975 polls/s        2621794 rows/s   over 8 readers
+   latency     p50   135.3us   p99    690.2us   p99.9    1436.5us   (800000 samples)
+   subjects    1229260 reader polls, 78653948 rows read -- a run with zero of either is a failed run, not a fast one
+
+== summary over 1 rounds: mean +/- sample stddev (min, max, n)
+   a trailing ! marks a metric whose stddev exceeds 10% of its mean
+
+   purego-sqlite (native)
+      appends/s        2000 +/- 0  (min 2000, max 2000, n=1)
+      min polls/s      4411 +/- 0  (min 4411, max 4411, n=1)
+      median polls/s   5361 +/- 0  (min 5361, max 5361, n=1)
+      rows/s aggregate 2621794 +/- 0  (min 2621794, max 2621794, n=1)
+      fairness max/min 1.229 +/- 0.000 (min 1.229, max 1.229)
+      p50 latency      135 +/- 0  (min 135, max 135, n=1) us
+      p99 latency      690 +/- 0  (min 690, max 690, n=1) us
+      errors           0
+
+   one-line table (mean median-polls/s +/- stddev)
+   driver                                    appends/s      min polls/s      med polls/s       p99 us
+   purego-sqlite (native)                  2000+/-0         4411+/-0          5361+/-0         690+/-0   
+
+wrote /Users/pjstein/source/pjstein/purego-sqlite/bench/results/batching-ab-off-4.json
+
+########## pair 5/5  batching=on  load { 11.40 10.47 12.87 }
+== invocation (re-run this verbatim to reproduce)
+   PUREGO_SQLITE_BATCH="" /Users/pjstein/source/pjstein/purego-sqlite/bench/bin/bakeoff -duration 30s -warmup 3s -rounds 1 -readers 8 -seed 200000 -writerate 2000 -only purego -json /Users/pjstein/source/pjstein/purego-sqlite/bench/results/batching-ab-on-5.json
+   row batching in this process: true
+
+== machine and toolchain
+   batch env          PUREGO_SQLITE_BATCH=""
+   cpus               12
+   go version         go1.26.5
+   goarch             arm64
+   goos               darwin
+   measured at        2026-08-08T21:22:25-04:00
+   pinned sourceid    2026-07-24 19:02:57 bf7c7f30031888f4e796e429ab3978879485813aaca6f641c7b33e4e09459bcc
+   pinned sqlite      3.53.4
+   row batching       true
+   shipped library    /Users/pjstein/Library/Caches/purego-sqlite/f2cb875b1f15e8ae/libsqlite3.dylib
+
+== 1 drivers under test, interleaved with a rotating order: every round runs each once, and each driver takes every slot across rounds
+   1. purego-sqlite (native)
+
+== build capabilities (reported, not asserted: a build without FTS5 is a different build, not a wrong one)
+   driver                             sqlite           threadsafe       fts5-usable      stat4            math             DQS=0           
+   purego-sqlite (native)             3.53.4           THREADSAFE=2     yes              1                1                1               
+
+== workload: 1 writer + 8 readers, 30s measured per run after 3s warmup, 1 rounds, 200000 events pre-seeded
+   writer capped at 2000 appends/s so readers are compared under identical write pressure
+   append: INSERT INTO events (stream, kind, ts, payload) VALUES (?, ?, ?, ?)
+   tail:   SELECT seq, kind, ts, payload FROM events WHERE seq > ? ORDER BY seq LIMIT 64
+
+########## ROUND 1/1
+   machine: load 11.40/10.47/12.87  cpu 94%  no build tools running  busy: Google Chrome Helper (Renderer) 16%  [NOT QUIET -- results from this round are suspect]
+   order:   purego-sqlite (native)
+
+-- purego-sqlite (native)  round 1 slot 1  (30.0s measured)
+   writer            2000 appends/s  (60000 appends committed)
+   readers     min    14260   median    14668   max    15551  polls/s   (max/min 1.09)
+   aggregate       117901 polls/s        7543851 rows/s   over 8 readers
+   latency     p50    45.5us   p99    316.4us   p99.9     500.4us   (800000 samples)
+   subjects    3537025 reader polls, 226315588 rows read -- a run with zero of either is a failed run, not a fast one
+
+== summary over 1 rounds: mean +/- sample stddev (min, max, n)
+   a trailing ! marks a metric whose stddev exceeds 10% of its mean
+
+   purego-sqlite (native)
+      appends/s        2000 +/- 0  (min 2000, max 2000, n=1)
+      min polls/s      14260 +/- 0  (min 14260, max 14260, n=1)
+      median polls/s   14668 +/- 0  (min 14668, max 14668, n=1)
+      rows/s aggregate 7543851 +/- 0  (min 7543851, max 7543851, n=1)
+      fairness max/min 1.091 +/- 0.000 (min 1.091, max 1.091)
+      p50 latency      46 +/- 0  (min 46, max 46, n=1) us
+      p99 latency      316 +/- 0  (min 316, max 316, n=1) us
+      errors           0
+
+   one-line table (mean median-polls/s +/- stddev)
+   driver                                    appends/s      min polls/s      med polls/s       p99 us
+   purego-sqlite (native)                  2000+/-0        14260+/-0         14668+/-0         316+/-0   
+
+wrote /Users/pjstein/source/pjstein/purego-sqlite/bench/results/batching-ab-on-5.json
+
+########## pair 5/5  batching=off  load { 10.64 10.37 12.76 }
+== invocation (re-run this verbatim to reproduce)
+   PUREGO_SQLITE_BATCH="0" /Users/pjstein/source/pjstein/purego-sqlite/bench/bin/bakeoff -duration 30s -warmup 3s -rounds 1 -readers 8 -seed 200000 -writerate 2000 -only purego -json /Users/pjstein/source/pjstein/purego-sqlite/bench/results/batching-ab-off-5.json
+   row batching in this process: false
+
+== machine and toolchain
+   batch env          PUREGO_SQLITE_BATCH="0"
+   cpus               12
+   go version         go1.26.5
+   goarch             arm64
+   goos               darwin
+   measured at        2026-08-08T21:22:59-04:00
+   pinned sourceid    2026-07-24 19:02:57 bf7c7f30031888f4e796e429ab3978879485813aaca6f641c7b33e4e09459bcc
+   pinned sqlite      3.53.4
+   row batching       false
+   shipped library    /Users/pjstein/Library/Caches/purego-sqlite/f2cb875b1f15e8ae/libsqlite3.dylib
+
+== 1 drivers under test, interleaved with a rotating order: every round runs each once, and each driver takes every slot across rounds
+   1. purego-sqlite (native)
+
+== build capabilities (reported, not asserted: a build without FTS5 is a different build, not a wrong one)
+   driver                             sqlite           threadsafe       fts5-usable      stat4            math             DQS=0           
+   purego-sqlite (native)             3.53.4           THREADSAFE=2     yes              1                1                1               
+
+== workload: 1 writer + 8 readers, 30s measured per run after 3s warmup, 1 rounds, 200000 events pre-seeded
+   writer capped at 2000 appends/s so readers are compared under identical write pressure
+   append: INSERT INTO events (stream, kind, ts, payload) VALUES (?, ?, ?, ?)
+   tail:   SELECT seq, kind, ts, payload FROM events WHERE seq > ? ORDER BY seq LIMIT 64
+
+########## ROUND 1/1
+   machine: load 10.64/10.37/12.76  cpu 66%  no build tools running  [NOT QUIET -- results from this round are suspect]
+   order:   purego-sqlite (native)
+
+-- purego-sqlite (native)  round 1 slot 1  (30.0s measured)
+   writer            2000 appends/s  (60001 appends committed)
+   readers     min     4635   median     5092   max     5804  polls/s   (max/min 1.25)
+   aggregate        41964 polls/s        2685106 rows/s   over 8 readers
+   latency     p50   137.8us   p99    652.0us   p99.9     941.0us   (800000 samples)
+   subjects    1258938 reader polls, 80553512 rows read -- a run with zero of either is a failed run, not a fast one
+
+== summary over 1 rounds: mean +/- sample stddev (min, max, n)
+   a trailing ! marks a metric whose stddev exceeds 10% of its mean
+
+   purego-sqlite (native)
+      appends/s        2000 +/- 0  (min 2000, max 2000, n=1)
+      min polls/s      4635 +/- 0  (min 4635, max 4635, n=1)
+      median polls/s   5092 +/- 0  (min 5092, max 5092, n=1)
+      rows/s aggregate 2685106 +/- 0  (min 2685106, max 2685106, n=1)
+      fairness max/min 1.252 +/- 0.000 (min 1.252, max 1.252)
+      p50 latency      138 +/- 0  (min 138, max 138, n=1) us
+      p99 latency      652 +/- 0  (min 652, max 652, n=1) us
+      errors           0
+
+   one-line table (mean median-polls/s +/- stddev)
+   driver                                    appends/s      min polls/s      med polls/s       p99 us
+   purego-sqlite (native)                  2000+/-0         4635+/-0          5092+/-0         652+/-0   
+
+wrote /Users/pjstein/source/pjstein/purego-sqlite/bench/results/batching-ab-off-5.json
+

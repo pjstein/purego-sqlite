@@ -1,0 +1,225 @@
+# raw output of: /Users/pjstein/source/pjstein/purego-sqlite/bench/bin/bakeoff -duration 30s -warmup 3s -rounds 4 -readers 8 -seed 200000 -writerate 0
+# written 2026-08-09T01:35:58Z
+
+== invocation (re-run this verbatim to reproduce)
+   PUREGO_SQLITE_BATCH="" /Users/pjstein/source/pjstein/purego-sqlite/bench/bin/bakeoff -duration 30s -warmup 3s -rounds 4 -readers 8 -seed 200000 -writerate 0 -json /Users/pjstein/source/pjstein/purego-sqlite/bench/results/contended-unthrottled.json
+   row batching in this process: true
+
+== machine and toolchain
+   batch env          PUREGO_SQLITE_BATCH=""
+   cpus               12
+   go version         go1.26.5
+   goarch             arm64
+   goos               darwin
+   measured at        2026-08-08T21:35:58-04:00
+   pinned sourceid    2026-07-24 19:02:57 bf7c7f30031888f4e796e429ab3978879485813aaca6f641c7b33e4e09459bcc
+   pinned sqlite      3.53.4
+   row batching       true
+   shipped library    /Users/pjstein/Library/Caches/purego-sqlite/f2cb875b1f15e8ae/libsqlite3.dylib
+
+== 4 drivers under test, interleaved with a rotating order: every round runs each once, and each driver takes every slot across rounds
+   1. purego-sqlite (native)
+   2. ncruces/go-sqlite3 (native)
+   3. ncruces/go-sqlite3 (database/sql)
+   4. modernc.org/sqlite (database/sql)
+
+== build capabilities (reported, not asserted: a build without FTS5 is a different build, not a wrong one)
+   driver                             sqlite           threadsafe       fts5-usable      stat4            math             DQS=0           
+   purego-sqlite (native)             3.53.4           THREADSAFE=2     yes              1                1                1               
+   ncruces/go-sqlite3 (native)        3.53.4           THREADSAFE=0     no               1                1                1               
+   ncruces/go-sqlite3 (database/sql)  3.53.4           THREADSAFE=0     no               1                1                1               
+   modernc.org/sqlite (database/sql)  3.53.3           THREADSAFE=1     yes              1                1                0               
+
+== workload: 1 writer + 8 readers, 30s measured per run after 3s warmup, 4 rounds, 200000 events pre-seeded
+   writer unthrottled: each driver picks its own write rate, so reader numbers are NOT comparable across drivers
+   append: INSERT INTO events (stream, kind, ts, payload) VALUES (?, ?, ?, ?)
+   tail:   SELECT seq, kind, ts, payload FROM events WHERE seq > ? ORDER BY seq LIMIT 64
+
+   (waited 4m32s for the machine to settle before round 1)
+
+########## ROUND 1/4
+   machine: load 8.73/13.47/13.03  cpu 64%  no build tools running  busy: claude 19%
+   order:   purego-sqlite (native) -> ncruces/go-sqlite3 (native) -> ncruces/go-sqlite3 (database/sql) -> modernc.org/sqlite (database/sql)
+
+-- purego-sqlite (native)  round 1 slot 1  (30.0s measured)
+   writer            8728 appends/s  (261837 appends committed)
+   readers     min    10810   median    11228   max    11381  polls/s   (max/min 1.05)
+   aggregate        89147 polls/s        5704636 rows/s   over 8 readers
+   latency     p50    62.8us   p99    376.5us   p99.9     742.1us   (800000 samples)
+   subjects    2674441 reader polls, 171140346 rows read -- a run with zero of either is a failed run, not a fast one
+
+-- ncruces/go-sqlite3 (native)  round 1 slot 2  (30.0s measured)
+   writer            8376 appends/s  (251287 appends committed)
+   readers     min     6507   median     6819   max     7052  polls/s   (max/min 1.08)
+   aggregate        54435 polls/s        3483340 rows/s   over 8 readers
+   latency     p50    46.9us   p99   1997.6us   p99.9   13013.1us   (800000 samples)
+   subjects    1633041 reader polls, 104500345 rows read -- a run with zero of either is a failed run, not a fast one
+
+-- ncruces/go-sqlite3 (database/sql)  round 1 slot 3  (30.0s measured)
+   writer            5879 appends/s  (176386 appends committed)
+   readers     min     7828   median     8226   max     8578  polls/s   (max/min 1.10)
+   aggregate        65728 polls/s        4205879 rows/s   over 8 readers
+   latency     p50    73.9us   p99    597.8us   p99.9    4028.6us   (800000 samples)
+   subjects    1971920 reader polls, 126180902 rows read -- a run with zero of either is a failed run, not a fast one
+
+-- modernc.org/sqlite (database/sql)  round 1 slot 4  (30.0s measured)
+   writer            9936 appends/s  (298083 appends committed)
+   readers     min     3278   median     3350   max     3373  polls/s   (max/min 1.03)
+   aggregate        26757 polls/s        1712219 rows/s   over 8 readers
+   latency     p50   199.2us   p99   2154.7us   p99.9    7621.5us   (798326 samples)
+   subjects    802711 reader polls, 51366609 rows read -- a run with zero of either is a failed run, not a fast one
+
+   (waited 2m1s for the machine to settle before round 2)
+
+########## ROUND 2/4
+   machine: load 8.80/14.28/13.79  cpu 107%  no build tools running  busy: claude 27%, claude 20%
+   order:   ncruces/go-sqlite3 (native) -> ncruces/go-sqlite3 (database/sql) -> modernc.org/sqlite (database/sql) -> purego-sqlite (native)
+
+-- ncruces/go-sqlite3 (native)  round 2 slot 1  (30.0s measured)
+   writer            5650 appends/s  (169491 appends committed)
+   readers     min    12585   median    13708   max    13837  polls/s   (max/min 1.10)
+   aggregate       107469 polls/s        6876793 rows/s   over 8 readers
+   latency     p50    53.5us   p99    304.8us   p99.9     512.4us   (800000 samples)
+   subjects    3224063 reader polls, 206304285 rows read -- a run with zero of either is a failed run, not a fast one
+
+-- ncruces/go-sqlite3 (database/sql)  round 2 slot 2  (30.0s measured)
+   writer            5378 appends/s  (161351 appends committed)
+   readers     min     9110   median     9516   max    10071  polls/s   (max/min 1.11)
+   aggregate        76351 polls/s        4885582 rows/s   over 8 readers
+   latency     p50    78.0us   p99    428.4us   p99.9     713.5us   (800000 samples)
+   subjects    2290558 reader polls, 146569428 rows read -- a run with zero of either is a failed run, not a fast one
+
+-- modernc.org/sqlite (database/sql)  round 2 slot 3  (30.0s measured)
+   writer           10667 appends/s  (319997 appends committed)
+   readers     min     3824   median     3853   max     3874  polls/s   (max/min 1.01)
+   aggregate        30811 polls/s        1971642 rows/s   over 8 readers
+   latency     p50   183.3us   p99   1883.3us   p99.9    4713.2us   (800000 samples)
+   subjects    924317 reader polls, 59149281 rows read -- a run with zero of either is a failed run, not a fast one
+
+-- purego-sqlite (native)  round 2 slot 4  (30.0s measured)
+   writer            9463 appends/s  (283890 appends committed)
+   readers     min    11074   median    11294   max    11624  polls/s   (max/min 1.05)
+   aggregate        90307 polls/s        5778924 rows/s   over 8 readers
+   latency     p50    67.7us   p99    325.5us   p99.9     520.3us   (800000 samples)
+   subjects    2709229 reader polls, 173368592 rows read -- a run with zero of either is a failed run, not a fast one
+
+   (waited 10s for the machine to settle before round 3)
+
+########## ROUND 3/4
+   machine: load 8.53/12.26/13.06  cpu 129%  no build tools running  busy: WindowServer 26%, claude 17%
+   order:   ncruces/go-sqlite3 (database/sql) -> modernc.org/sqlite (database/sql) -> purego-sqlite (native) -> ncruces/go-sqlite3 (native)
+
+-- ncruces/go-sqlite3 (database/sql)  round 3 slot 1  (30.0s measured)
+   writer            5682 appends/s  (170470 appends committed)
+   readers     min     9311   median     9820   max    10398  polls/s   (max/min 1.12)
+   aggregate        78411 polls/s        5017471 rows/s   over 8 readers
+   latency     p50    74.1us   p99    417.2us   p99.9     731.8us   (800000 samples)
+   subjects    2352347 reader polls, 150525339 rows read -- a run with zero of either is a failed run, not a fast one
+
+-- modernc.org/sqlite (database/sql)  round 3 slot 2  (30.0s measured)
+   writer           12201 appends/s  (366045 appends committed)
+   readers     min     3853   median     3887   max     3950  polls/s   (max/min 1.03)
+   aggregate        31119 polls/s        1991402 rows/s   over 8 readers
+   latency     p50   174.7us   p99   2017.4us   p99.9    4921.3us   (800000 samples)
+   subjects    933573 reader polls, 59742089 rows read -- a run with zero of either is a failed run, not a fast one
+
+-- purego-sqlite (native)  round 3 slot 3  (30.0s measured)
+   writer            8696 appends/s  (260883 appends committed)
+   readers     min    10996   median    11740   max    11957  polls/s   (max/min 1.09)
+   aggregate        92698 polls/s        5931816 rows/s   over 8 readers
+   latency     p50    61.7us   p99    357.3us   p99.9     675.9us   (800000 samples)
+   subjects    2780935 reader polls, 177954997 rows read -- a run with zero of either is a failed run, not a fast one
+
+-- ncruces/go-sqlite3 (native)  round 3 slot 4  (30.0s measured)
+   writer            5786 appends/s  (173582 appends committed)
+   readers     min    12565   median    13068   max    13184  polls/s   (max/min 1.05)
+   aggregate       104119 polls/s        6662551 rows/s   over 8 readers
+   latency     p50    50.7us   p99    328.0us   p99.9     655.5us   (800000 samples)
+   subjects    3123585 reader polls, 199876926 rows read -- a run with zero of either is a failed run, not a fast one
+
+   (waited 20s for the machine to settle before round 4)
+
+########## ROUND 4/4
+   machine: load 8.17/11.01/12.43  cpu 161%  no build tools running  busy: bztransmit 100%
+   order:   modernc.org/sqlite (database/sql) -> purego-sqlite (native) -> ncruces/go-sqlite3 (native) -> ncruces/go-sqlite3 (database/sql)
+
+-- modernc.org/sqlite (database/sql)  round 4 slot 1  (30.0s measured)
+   writer            7761 appends/s  (232829 appends committed)
+   readers     min     3931   median     3943   max     3975  polls/s   (max/min 1.01)
+   aggregate        31570 polls/s        2020222 rows/s   over 8 readers
+   latency     p50   172.2us   p99   1814.5us   p99.9    4419.0us   (800000 samples)
+   subjects    947103 reader polls, 60606769 rows read -- a run with zero of either is a failed run, not a fast one
+
+-- purego-sqlite (native)  round 4 slot 2  (30.0s measured)
+   writer            8677 appends/s  (260329 appends committed)
+   readers     min    11099   median    11233   max    11732  polls/s   (max/min 1.06)
+   aggregate        90407 polls/s        5785243 rows/s   over 8 readers
+   latency     p50    61.8us   p99    373.5us   p99.9    1013.5us   (800000 samples)
+   subjects    2712253 reader polls, 173560445 rows read -- a run with zero of either is a failed run, not a fast one
+
+-- ncruces/go-sqlite3 (native)  round 4 slot 3  (30.0s measured)
+   writer            5292 appends/s  (158764 appends committed)
+   readers     min    11414   median    12513   max    13602  polls/s   (max/min 1.19)
+   aggregate       100258 polls/s        6415379 rows/s   over 8 readers
+   latency     p50    50.0us   p99    346.3us   p99.9     941.5us   (800000 samples)
+   subjects    3007732 reader polls, 192461649 rows read -- a run with zero of either is a failed run, not a fast one
+
+-- ncruces/go-sqlite3 (database/sql)  round 4 slot 4  (30.0s measured)
+   writer            4384 appends/s  (131538 appends committed)
+   readers     min     8725   median     9639   max     9739  polls/s   (max/min 1.12)
+   aggregate        75820 polls/s        4851614 rows/s   over 8 readers
+   latency     p50    71.2us   p99    464.8us   p99.9     901.8us   (800000 samples)
+   subjects    2274674 reader polls, 145552789 rows read -- a run with zero of either is a failed run, not a fast one
+
+== summary over 4 rounds: mean +/- sample stddev (min, max, n)
+   a trailing ! marks a metric whose stddev exceeds 10% of its mean
+
+   purego-sqlite (native)
+      appends/s        8891 +/- 382  (min 8677, max 9463, n=4)
+      min polls/s      10995 +/- 131  (min 10810, max 11099, n=4)
+      median polls/s   11374 +/- 246  (min 11228, max 11740, n=4)
+      rows/s aggregate 5800155 +/- 95099  (min 5704636, max 5931816, n=4)
+      fairness max/min 1.062 +/- 0.017 (min 1.050, max 1.087)
+      p50 latency      64 +/- 3  (min 62, max 68, n=4) us
+      p99 latency      358 +/- 23  (min 326, max 376, n=4) us
+      errors           0
+
+   ncruces/go-sqlite3 (native)
+      appends/s        6276 +/- 1416  (min 5292, max 8376, n=4) !
+      min polls/s      10768 +/- 2893  (min 6507, max 12585, n=4) !
+      median polls/s   11527 +/- 3177  (min 6819, max 13708, n=4) !
+      rows/s aggregate 5859516 +/- 1595297  (min 3483340, max 6876793, n=4) !
+      fairness max/min 1.106 +/- 0.061 (min 1.049, max 1.192)
+      p50 latency      50 +/- 3  (min 47, max 54, n=4) us
+      p99 latency      744 +/- 836  (min 305, max 1998, n=4) ! us
+      errors           0
+      ** median polls/s stddev is 27.6% of mean -- above the 10% bar; do not conclude from this without investigating
+
+   ncruces/go-sqlite3 (database/sql)
+      appends/s        5331 +/- 664  (min 4384, max 5879, n=4) !
+      min polls/s      8744 +/- 657  (min 7828, max 9311, n=4)
+      median polls/s   9300 +/- 727  (min 8226, max 9820, n=4)
+      rows/s aggregate 4740137 +/- 363285  (min 4205879, max 5017471, n=4)
+      fairness max/min 1.109 +/- 0.010 (min 1.096, max 1.117)
+      p50 latency      74 +/- 3  (min 71, max 78, n=4) us
+      p99 latency      477 +/- 83  (min 417, max 598, n=4) ! us
+      errors           0
+
+   modernc.org/sqlite (database/sql)
+      appends/s        10141 +/- 1846  (min 7761, max 12201, n=4) !
+      min polls/s      3721 +/- 299  (min 3278, max 3931, n=4)
+      median polls/s   3758 +/- 275  (min 3350, max 3943, n=4)
+      rows/s aggregate 1923871 +/- 142505  (min 1712219, max 2020222, n=4)
+      fairness max/min 1.020 +/- 0.009 (min 1.011, max 1.029)
+      p50 latency      182 +/- 12  (min 172, max 199, n=4) us
+      p99 latency      1967 +/- 151  (min 1814, max 2155, n=4) us
+      errors           0
+
+   one-line table (mean median-polls/s +/- stddev)
+   driver                                    appends/s      min polls/s      med polls/s       p99 us
+   purego-sqlite (native)                  8891+/-382      10995+/-131       11374+/-246       358+/-23  
+   ncruces/go-sqlite3 (native)             6276+/-1416     10768+/-2893      11527+/-3177      744+/-836 
+   ncruces/go-sqlite3 (database/sql)       5331+/-664       8744+/-657        9300+/-727       477+/-83  
+   modernc.org/sqlite (database/sql)      10141+/-1846      3721+/-299        3758+/-275      1967+/-151 
+
+wrote /Users/pjstein/source/pjstein/purego-sqlite/bench/results/contended-unthrottled.json

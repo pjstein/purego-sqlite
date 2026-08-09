@@ -1,0 +1,28 @@
+# raw output of: go test -v -count=1 -run 'TestDriverConformance|TestWorkloadShapeIsIdentical|TestFFISetupReportsWhatItMeasured' .
+# written 2026-08-09T01:17:05Z
+
+=== RUN   TestDriverConformance
+=== RUN   TestDriverConformance/purego-sqlite_(native)
+    conformance_test.go:32: SQLite 3.53.4
+    conformance_test.go:76: checked 29 round-trip values and 37 expressions
+=== RUN   TestDriverConformance/ncruces/go-sqlite3_(native)
+    conformance_test.go:32: SQLite 3.53.4
+    conformance_test.go:76: checked 29 round-trip values and 37 expressions
+=== RUN   TestDriverConformance/ncruces/go-sqlite3_(database/sql)
+    conformance_test.go:32: SQLite 3.53.4
+    conformance_test.go:76: checked 29 round-trip values and 37 expressions
+=== RUN   TestDriverConformance/modernc.org/sqlite_(database/sql)
+    conformance_test.go:32: SQLite 3.53.3
+    conformance_test.go:76: checked 29 round-trip values and 37 expressions
+--- PASS: TestDriverConformance (0.02s)
+    --- PASS: TestDriverConformance/purego-sqlite_(native) (0.01s)
+    --- PASS: TestDriverConformance/ncruces/go-sqlite3_(native) (0.01s)
+    --- PASS: TestDriverConformance/ncruces/go-sqlite3_(database/sql) (0.00s)
+    --- PASS: TestDriverConformance/modernc.org/sqlite_(database/sql) (0.01s)
+=== RUN   TestWorkloadShapeIsIdentical
+--- PASS: TestWorkloadShapeIsIdentical (0.06s)
+=== RUN   TestFFISetupReportsWhatItMeasured
+FFI comparison drives /Users/pjstein/Library/Caches/purego-sqlite/f2cb875b1f15e8ae/libsqlite3.dylib (SQLite 3.53.4) through both purego and cgo
+--- PASS: TestFFISetupReportsWhatItMeasured (0.00s)
+PASS
+ok  	github.com/pjstein/purego-sqlite/bench	0.436s

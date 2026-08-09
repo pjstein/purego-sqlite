@@ -1,0 +1,71 @@
+# raw output of 5 separate invocations of:
+#   go test -run ^$ -bench BenchmarkAppend -benchtime 3s -count 1 -benchmem .
+# one invocation per repetition, so every benchmark runs once per pass
+# written 2026-08-09T01:15:08Z
+
+### repetition 1/5  load { 5.65 15.04 16.02 }  01:15:08Z
+goos: darwin
+goarch: arm64
+pkg: github.com/pjstein/purego-sqlite/bench
+cpu: Apple M2 Max
+BenchmarkAppend/cgo_(same_library)-12         	  207835	     17375 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAppend/purego-sqlite_(native)-12     	  202312	     17901 ns/op	    1448 B/op	      12 allocs/op
+BenchmarkAppend/ncruces/go-sqlite3_(native)-12         	  162538	     22245 ns/op	      32 B/op	       1 allocs/op
+BenchmarkAppend/ncruces/go-sqlite3_(database/sql)-12   	  159394	     22924 ns/op	     319 B/op	       8 allocs/op
+BenchmarkAppend/modernc.org/sqlite_(database/sql)-12   	  158617	     22969 ns/op	     352 B/op	      11 allocs/op
+PASS
+ok  	github.com/pjstein/purego-sqlite/bench	18.463s
+
+### repetition 2/5  load { 4.75 14.23 15.70 }  01:15:27Z
+goos: darwin
+goarch: arm64
+pkg: github.com/pjstein/purego-sqlite/bench
+cpu: Apple M2 Max
+BenchmarkAppend/cgo_(same_library)-12         	  200295	     17349 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAppend/purego-sqlite_(native)-12     	  201202	     18153 ns/op	    1448 B/op	      12 allocs/op
+BenchmarkAppend/ncruces/go-sqlite3_(native)-12         	  166119	     24413 ns/op	      32 B/op	       1 allocs/op
+BenchmarkAppend/ncruces/go-sqlite3_(database/sql)-12   	  159764	     22898 ns/op	     319 B/op	       8 allocs/op
+BenchmarkAppend/modernc.org/sqlite_(database/sql)-12   	  159122	     22923 ns/op	     352 B/op	      11 allocs/op
+PASS
+ok  	github.com/pjstein/purego-sqlite/bench	18.818s
+
+### repetition 3/5  load { 4.11 13.47 15.39 }  01:15:47Z
+goos: darwin
+goarch: arm64
+pkg: github.com/pjstein/purego-sqlite/bench
+cpu: Apple M2 Max
+BenchmarkAppend/cgo_(same_library)-12         	  205659	     17495 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAppend/purego-sqlite_(native)-12     	  198723	     18643 ns/op	    1448 B/op	      12 allocs/op
+BenchmarkAppend/ncruces/go-sqlite3_(native)-12         	  159310	     22282 ns/op	      32 B/op	       1 allocs/op
+BenchmarkAppend/ncruces/go-sqlite3_(database/sql)-12   	  158954	     22908 ns/op	     319 B/op	       8 allocs/op
+BenchmarkAppend/modernc.org/sqlite_(database/sql)-12   	  160197	     23049 ns/op	     352 B/op	      11 allocs/op
+PASS
+ok  	github.com/pjstein/purego-sqlite/bench	18.506s
+
+### repetition 4/5  load { 3.91 12.81 15.11 }  01:16:06Z
+goos: darwin
+goarch: arm64
+pkg: github.com/pjstein/purego-sqlite/bench
+cpu: Apple M2 Max
+BenchmarkAppend/cgo_(same_library)-12         	  199125	     17548 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAppend/purego-sqlite_(native)-12     	  199840	     18615 ns/op	    1448 B/op	      12 allocs/op
+BenchmarkAppend/ncruces/go-sqlite3_(native)-12         	  132042	     23466 ns/op	      32 B/op	       1 allocs/op
+BenchmarkAppend/ncruces/go-sqlite3_(database/sql)-12   	  156229	     23519 ns/op	     319 B/op	       8 allocs/op
+BenchmarkAppend/modernc.org/sqlite_(database/sql)-12   	  156368	     23569 ns/op	     352 B/op	      11 allocs/op
+PASS
+ok  	github.com/pjstein/purego-sqlite/bench	17.997s
+
+### repetition 5/5  load { 3.56 12.29 14.89 }  01:16:24Z
+goos: darwin
+goarch: arm64
+pkg: github.com/pjstein/purego-sqlite/bench
+cpu: Apple M2 Max
+BenchmarkAppend/cgo_(same_library)-12         	  194654	     18134 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAppend/purego-sqlite_(native)-12     	  183483	     18590 ns/op	    1448 B/op	      12 allocs/op
+BenchmarkAppend/ncruces/go-sqlite3_(native)-12         	  142101	     23140 ns/op	      32 B/op	       1 allocs/op
+BenchmarkAppend/ncruces/go-sqlite3_(database/sql)-12   	  157454	     23468 ns/op	     319 B/op	       8 allocs/op
+BenchmarkAppend/modernc.org/sqlite_(database/sql)-12   	  140766	     23576 ns/op	     352 B/op	      11 allocs/op
+PASS
+ok  	github.com/pjstein/purego-sqlite/bench	17.579s
+
+# machine at end: load { 4.16 11.85 14.67 }

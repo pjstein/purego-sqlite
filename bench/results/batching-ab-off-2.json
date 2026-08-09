@@ -1,0 +1,108 @@
+{
+  "invocation": "/Users/pjstein/source/pjstein/purego-sqlite/bench/bin/bakeoff -duration 30s -warmup 3s -rounds 1 -readers 8 -seed 200000 -writerate 2000 -only purego -json /Users/pjstein/source/pjstein/purego-sqlite/bench/results/batching-ab-off-2.json",
+  "row_batching_active": false,
+  "machine": {
+    "batch env": "PUREGO_SQLITE_BATCH=\"0\"",
+    "cpus": "12",
+    "go version": "go1.26.5",
+    "goarch": "arm64",
+    "goos": "darwin",
+    "measured at": "2026-08-08T21:19:37-04:00",
+    "pinned sourceid": "2026-07-24 19:02:57 bf7c7f30031888f4e796e429ab3978879485813aaca6f641c7b33e4e09459bcc",
+    "pinned sqlite": "3.53.4",
+    "row batching": "false",
+    "shipped library": "/Users/pjstein/Library/Caches/purego-sqlite/f2cb875b1f15e8ae/libsqlite3.dylib"
+  },
+  "config": {
+    "append_sql": "INSERT INTO events (stream, kind, ts, payload) VALUES (?, ?, ?, ?)",
+    "batch_env": "0",
+    "duration": "30s",
+    "payload_size": 256,
+    "pragmas": [
+      "PRAGMA busy_timeout=10000",
+      "PRAGMA journal_mode=WAL",
+      "PRAGMA synchronous=NORMAL",
+      "PRAGMA cache_size=-16000",
+      "PRAGMA foreign_keys=OFF"
+    ],
+    "readers": 8,
+    "rounds": 1,
+    "seed_rows": 200000,
+    "tail_limit": 64,
+    "tail_sql": "SELECT seq, kind, ts, payload FROM events WHERE seq \u003e ? ORDER BY seq LIMIT 64",
+    "warmup": "3s",
+    "write_rate": 2000
+  },
+  "capabilities": [
+    {
+      "compile-options-reported": "44",
+      "double-quoted-strings-rejected": "1",
+      "driver": "purego-sqlite (native)",
+      "fts5": "1",
+      "fts5-usable": "yes",
+      "math-functions": "1",
+      "sqlite-version": "3.53.4",
+      "stat4": "1",
+      "threading-mode": "THREADSAFE=2"
+    }
+  ],
+  "round_states": [
+    {
+      "at": "2026-08-08T21:19:37.623792-04:00",
+      "load_1min": 8.45,
+      "load_5min": 9.84,
+      "load_15min": 13.25,
+      "build_processes": [],
+      "busy_processes": [
+        "Google Chrome Helper (Renderer) 55%",
+        "claude 34%",
+        "claude 15%"
+      ],
+      "total_cpu_percent": 155.49999999999991,
+      "power_source": "Now drawing from 'AC Power'",
+      "thermal": "no thermal warning recorded"
+    }
+  ],
+  "results": [
+    {
+      "driver": "purego-sqlite (native)",
+      "round": 1,
+      "slot": 1,
+      "seconds": 30.000112708,
+      "write_rate_target": 2000,
+      "appends": 60000,
+      "appends_per_sec": 1999.9924861615623,
+      "reader_polls": [
+        170262,
+        169121,
+        168909,
+        168323,
+        147313,
+        136907,
+        152727,
+        168383
+      ],
+      "reader_rows": [
+        10894044,
+        10821107,
+        10807180,
+        10770076,
+        9425489,
+        8759819,
+        9772066,
+        10773892
+      ],
+      "polls_per_sec_min": 4563.54952171535,
+      "polls_per_sec_median": 5611.745583712625,
+      "polls_per_sec_max": 5675.378677980665,
+      "polls_per_sec_aggregate": 42731.3394612064,
+      "rows_per_sec_aggregate": 2734112.161456217,
+      "fairness_ratio_max_over_min": 1.2436325388767557,
+      "latency_p50_us": 131.667,
+      "latency_p99_us": 648.959,
+      "latency_p999_us": 901.75,
+      "latency_samples": 800000,
+      "started_at": "2026-08-08T21:19:38.156173-04:00"
+    }
+  ]
+}
