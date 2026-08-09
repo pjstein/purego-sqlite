@@ -39,6 +39,7 @@ var (
 	jsonOut   = flag.String("json", "", "also write results as JSON to this path")
 	sampleCap = flag.Int("samples", 100000, "reservoir size for latency samples, per reader")
 	writeRate = flag.Int("writerate", 0, "cap the writer at this many appends/s; 0 means as fast as it can go")
+	quietWait = flag.Duration("quietwait", 5*time.Minute, "before each round, wait up to this long for the machine to settle; 0 disables")
 )
 
 // RunResult is one driver's numbers for one run.
@@ -206,6 +207,16 @@ func main() {
 	// slot-linked contamination averages out instead of accumulating against
 	// whoever happened to go first.
 	for round := 1; round <= *rounds; round++ {
+		// Re-check between rounds, not just once before the first. The
+		// pre-flight gate can admit a quiet machine that goes hot ten minutes
+		// later, and a round measured through a Spotlight reindex or another
+		// lane's test suite is noise wearing the shape of a result. Waiting
+		// here costs minutes; not waiting costs the ability to tell a 10%
+		// difference from a 25% spread.
+		if waited := bakeoff.WaitForQuiet(*quietWait); waited > 0 {
+			fmt.Printf("\n   (waited %s for the machine to settle before round %d)\n", waited, round)
+		}
+
 		state := bakeoff.CaptureMachineState()
 		report.RoundStates = append(report.RoundStates, state)
 

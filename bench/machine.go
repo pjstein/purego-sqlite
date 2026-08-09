@@ -162,3 +162,27 @@ func (s MachineState) String() string {
 	}
 	return b.String()
 }
+
+// WaitForQuiet blocks until the machine looks idle enough to measure on, or
+// until the budget runs out, and reports how long it waited.
+//
+// The pre-flight gate in the runner script covers the start of a session; this
+// covers the middle of one, which is where a Spotlight reindex or another
+// lane's test suite actually turned up.
+func WaitForQuiet(budget time.Duration) time.Duration {
+	if budget <= 0 {
+		return 0
+	}
+	start := time.Now()
+	for {
+		if CaptureMachineState().Quiet() {
+			return time.Since(start).Truncate(time.Second)
+		}
+		if time.Since(start) >= budget {
+			// Proceeding is correct: a round that never runs measures nothing
+			// at all. The per-round state record says it was not quiet.
+			return time.Since(start).Truncate(time.Second)
+		}
+		time.Sleep(10 * time.Second)
+	}
+}
