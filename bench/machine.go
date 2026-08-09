@@ -140,10 +140,33 @@ func CaptureMachineState() MachineState {
 // backup, both of which push it well past this.
 const QuietLoadCeiling = 9.0
 
+// HogCPUThreshold matches the pre-flight gate's definition of a process big
+// enough to ruin a round on its own.
+const HogCPUThreshold = 50.0
+
 // Quiet reports whether the machine looked idle enough for the round to be
-// trusted: no build tools burning CPU, and a load average under the ceiling.
+// trusted: no build tools, no single process eating half a core-equivalent or
+// more, and a load average under the ceiling.
+//
+// The hog condition was missing at first, and it cost a real conclusion: the
+// worst reader-fairness spread of the whole exercise came from a round this
+// function had called quiet while a backup daemon and a browser renderer each
+// sat near 100% CPU. Load average alone did not notice, because two busy
+// processes on twelve cores do not move it much -- but they move a
+// disk-bound SQLite benchmark plenty.
 func (s MachineState) Quiet() bool {
-	return len(s.BuildProcs) == 0 && s.Load1 < QuietLoadCeiling
+	if len(s.BuildProcs) != 0 || s.Load1 >= QuietLoadCeiling {
+		return false
+	}
+	for _, p := range s.BusyProcs {
+		var pct float64
+		if n, err := fmt.Sscanf(p[strings.LastIndexByte(p, ' ')+1:], "%f%%", &pct); n == 1 && err == nil {
+			if pct >= HogCPUThreshold && !strings.HasPrefix(p, "bakeoff ") {
+				return false
+			}
+		}
+	}
+	return true
 }
 
 func (s MachineState) String() string {
