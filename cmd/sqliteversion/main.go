@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"os"
 
-	sqlite3 "github.com/pjstein/purego-sqlite"
+	"github.com/pjstein/purego-sqlite/sqlite3"
 )
 
 func main() {

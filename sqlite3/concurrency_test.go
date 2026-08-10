@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	sqlite3 "github.com/pjstein/purego-sqlite"
+	"github.com/pjstein/purego-sqlite/sqlite3"
 )
 
 // openWAL creates a WAL-mode database at path and returns a connection to it.

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Regenerate lib/MANIFEST.txt from the libraries actually present on disk.
+# Regenerate sqlite3/lib/MANIFEST.txt from the libraries actually present on disk.
 #
 # The manifest is what lets a consumer answer one question without a compiler:
 # "is the binary in my module cache the binary this repository says it is?"
@@ -21,7 +21,7 @@ source "$root/sqlite-version.lock"
 # shellcheck disable=SC1091
 source "$root/build/extensions.lock"
 
-out="$root/lib/MANIFEST.txt"
+out="$root/sqlite3/lib/MANIFEST.txt"
 
 sha256() {
   if command -v shasum >/dev/null 2>&1; then
@@ -40,7 +40,7 @@ size() { wc -c < "$1" | tr -d ' '; }
   echo "# builds the configuration recorded below and then rewrites this file."
   echo "#"
   echo "# To verify a library yourself:"
-  echo "#     shasum -a 256 lib/darwin_arm64/libsqlite3.dylib"
+  echo "#     shasum -a 256 sqlite3/lib/darwin_arm64/libsqlite3.dylib"
   echo "# and compare against the sha256 line for that platform."
   echo
   echo "sqlite-version    $SQLITE_VERSION"
@@ -53,7 +53,7 @@ size() { wc -c < "$1" | tr -d ' '; }
   echo
 
   found=0
-  for lib in "$root"/lib/*/libsqlite3.dylib "$root"/lib/*/libsqlite3.so; do
+  for lib in "$root"/sqlite3/lib/*/libsqlite3.dylib "$root"/sqlite3/lib/*/libsqlite3.so; do
     [ -e "$lib" ] || continue
     found=1
     rel="${lib#"$root"/}"

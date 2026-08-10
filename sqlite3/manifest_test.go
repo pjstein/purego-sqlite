@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -58,7 +59,7 @@ func TestManifestMatchesTheCommittedLibraries(t *testing.T) {
 	// A manifest that parsed to nothing would let this test pass without
 	// having checked anything, which is the failure mode it exists to prevent.
 	if len(entries) == 0 {
-		t.Fatal("lib/MANIFEST.txt named no platforms; either it is malformed or the parser is")
+		t.Fatal("sqlite3/lib/MANIFEST.txt named no platforms; either it is malformed or the parser is")
 	}
 
 	for _, e := range entries {
@@ -66,7 +67,10 @@ func TestManifestMatchesTheCommittedLibraries(t *testing.T) {
 			if e.path == "" || e.sha256 == "" {
 				t.Fatalf("manifest entry [%s] is missing a path or sha256", e.platform)
 			}
-			data, err := os.ReadFile(e.path)
+			// Manifest paths are repository-root-relative, because that is where a reader
+			// stands when they run the shasum command the README gives them. This test runs
+			// one directory down, in the package, so it resolves against the root.
+			data, err := os.ReadFile(filepath.Join("..", e.path))
 			if err != nil {
 				t.Fatalf("manifest names %s but it cannot be read: %v", e.path, err)
 			}

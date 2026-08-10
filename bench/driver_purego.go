@@ -1,7 +1,7 @@
 package bakeoff
 
 import (
-	sqlite3 "github.com/pjstein/purego-sqlite"
+	"github.com/pjstein/purego-sqlite/sqlite3"
 )
 
 // PuregoDriver is this repository's binding: upstream SQLite compiled here,

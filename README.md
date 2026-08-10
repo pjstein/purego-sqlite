@@ -3,7 +3,7 @@
 Real, upstream SQLite from Go, with no cgo anywhere — not in this package, and not in anything that imports it.
 
 ```go
-import sqlite3 "github.com/pjstein/purego-sqlite"
+import "github.com/pjstein/purego-sqlite/sqlite3"
 
 conn, err := sqlite3.Open("app.db")
 ```
@@ -17,6 +17,20 @@ go get github.com/pjstein/purego-sqlite
 Requires Go 1.26.5 or newer — that is the version in `go.mod`, and with the default `GOTOOLCHAIN=auto` an older Go will fetch it rather than fail. Nothing else: no build tags, no `go generate`, no install step.
 
 **Status: v0.1.0.** Proven on darwin/arm64 and linux/amd64, measured, and used in anger by exactly one project. The API is not frozen; see [API stability](#api-stability) before you depend on it.
+
+## What is where
+
+The importable package is `sqlite3/`, not the repository root — so the import path and the package name agree, and the root holds only what a reader needs before they import anything.
+
+| Path | What it is |
+|---|---|
+| `sqlite3/` | **the package.** Everything you import. The shipped shared libraries live in `sqlite3/lib/<goos>_<goarch>/`, embedded from there, because `go:embed` cannot reach above its own directory. |
+| `build/` | how the shared libraries are produced: the pinned amalgamation, the compile flags stated in one file, and the manifest of checksums. Not needed to use the package. |
+| `bench/` | a separate module, so its dependencies are never yours. The measurement harness and its results, including comparisons against other Go SQLite drivers. |
+| `conformance/` | the subset of SQLite's own test corpus this binding is held to. |
+| `cmd/` | small executables used in development — a version reader and a replication smoke test. |
+| `third_party/` | notices for vendored and referenced work. |
+| `sqlite-version.lock` | the pinned upstream version and its checksums. The one place that fact lives. |
 
 ## Why this exists
 
@@ -48,7 +62,7 @@ import (
 	"fmt"
 	"log"
 
-	sqlite3 "github.com/pjstein/purego-sqlite"
+	"github.com/pjstein/purego-sqlite/sqlite3"
 )
 
 func main() {
@@ -113,8 +127,8 @@ Full API documentation: [pkg.go.dev](https://pkg.go.dev/github.com/pjstein/pureg
 
 | Target | Prebuilt library | Tested in CI |
 | --- | --- | --- |
-| darwin/arm64 | `lib/darwin_arm64/libsqlite3.dylib` | yes |
-| linux/amd64 | `lib/linux_amd64/libsqlite3.so` | yes |
+| darwin/arm64 | `sqlite3/lib/darwin_arm64/libsqlite3.dylib` | yes |
+| linux/amd64 | `sqlite3/lib/linux_amd64/libsqlite3.so` | yes |
 | darwin/amd64 | not built | — |
 | linux/arm64 | not built | — |
 | windows/* | not built | — |
@@ -132,7 +146,7 @@ A stock system libsqlite3 works correctly this way — the row-batching shim is 
 
 ## Shipping binaries in the repository
 
-`lib/darwin_arm64/libsqlite3.dylib` and `lib/linux_amd64/libsqlite3.so` are committed, compiled artifacts. That is unusual enough to justify.
+`sqlite3/lib/darwin_arm64/libsqlite3.dylib` and `sqlite3/lib/linux_amd64/libsqlite3.so` are committed, compiled artifacts. That is unusual enough to justify.
 
 **Why.** The entire value proposition is that a consumer needs no C toolchain. Any alternative — building on install, downloading at first run, a `go generate` step — hands the toolchain problem back to the consumer, or introduces a network dependency into their build. The library is embedded with `go:embed`, so `go get` and `go build` are the only steps there are, and the binary a consumer ships already contains the exact SQLite this repository pinned.
 
@@ -145,11 +159,11 @@ This is small enough to ship as-is, and the recommendation is to ship it. The nu
 **How to verify what you got.**
 
 ```
-shasum -a 256 lib/darwin_arm64/libsqlite3.dylib   # compare against lib/MANIFEST.txt
+shasum -a 256 sqlite3/lib/darwin_arm64/libsqlite3.dylib   # compare against sqlite3/lib/MANIFEST.txt
 go test -run TestManifestMatchesTheCommittedLibraries ./...
 ```
 
-[`lib/MANIFEST.txt`](lib/MANIFEST.txt) records the size and SHA256 of each committed library alongside the pins it was built from, and a test in the suite fails if the two ever drift. At runtime, `TestShippedLibraryIsThePinnedUpstreamOne` fails if the loaded library does not report the version in `sqlite-version.lock`, and `sqlite3.Version()`, `SourceID()`, and `CompiledExtensions()` let you ask a running program the same questions.
+[`sqlite3/lib/MANIFEST.txt`](sqlite3/lib/MANIFEST.txt) records the size and SHA256 of each committed library alongside the pins it was built from, and a test in the suite fails if the two ever drift. At runtime, `TestShippedLibraryIsThePinnedUpstreamOne` fails if the loaded library does not report the version in `sqlite-version.lock`, and `sqlite3.Version()`, `SourceID()`, and `CompiledExtensions()` let you ask a running program the same questions.
 
 What the manifest does *not* claim is bit-for-bit reproducibility from a different toolchain. Two clang versions do not emit an identical dylib from identical input, and asserting they would produces a failure that means nothing. The reproducible artifacts are the *inputs*: the amalgamation and its two upstream hashes, the extension pin and its hash, and the complete flag list.
 

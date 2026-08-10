@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	sqlite3 "github.com/pjstein/purego-sqlite"
+	"github.com/pjstein/purego-sqlite/sqlite3"
 )
 
 // TestCreateAggregate checks the batched aggregate against SQLite's own

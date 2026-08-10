@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	ncruces "github.com/ncruces/go-sqlite3"
-	sqlite3 "github.com/pjstein/purego-sqlite"
+	"github.com/pjstein/purego-sqlite/sqlite3"
 )
 
 // BenchmarkSQLFunction measures what it costs to answer a SQL function call in

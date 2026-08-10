@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Compile the pinned SQLite amalgamation into lib/darwin_arm64/libsqlite3.dylib.
+# Compile the pinned SQLite amalgamation into sqlite3/lib/darwin_arm64/libsqlite3.dylib.
 #
-# One script per platform triple, each writing into lib/<goos>_<goarch>/. Adding
+# One script per platform triple, each writing into sqlite3/lib/<goos>_<goarch>/. Adding
 # linux-amd64 or linux-arm64 means adding a sibling script and a sibling
 # directory; nothing here needs to become a matrix first.
 set -euo pipefail
@@ -16,7 +16,7 @@ source "$here/flags.sh"
 goos=darwin
 goarch=arm64
 srcdir="$root/build/upstream/sqlite-amalgamation-${SQLITE_VERSION}"
-outdir="$root/lib/${goos}_${goarch}"
+outdir="$root/sqlite3/lib/${goos}_${goarch}"
 out="$outdir/libsqlite3.dylib"
 
 test -f "$srcdir/sqlite3.c" || { echo "build: run build/fetch.sh first" >&2; exit 1; }

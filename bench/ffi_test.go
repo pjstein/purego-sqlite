@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/ebitengine/purego"
-	sqlite3 "github.com/pjstein/purego-sqlite"
+	"github.com/pjstein/purego-sqlite/sqlite3"
 	bakeoff "github.com/pjstein/purego-sqlite/bench"
 	"github.com/pjstein/purego-sqlite/bench/cgoref"
 )

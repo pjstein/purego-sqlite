@@ -20,7 +20,7 @@ under-promises.
   compiled here under the flags in `build/flags.sh`.
 - **Prebuilt libraries for darwin/arm64 and linux/amd64**, committed under
   `lib/` and embedded with `go:embed`, with sizes and hashes recorded in
-  `lib/MANIFEST.txt` and a test that fails when the two drift.
+  `sqlite3/lib/MANIFEST.txt` and a test that fails when the two drift.
 - **A row-batching shim** (`build/shim.c`) that fetches a whole result row in
   one foreign call instead of seven. Optional and feature-detected, so a stock
   system libsqlite3 still works — only slower.

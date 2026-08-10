@@ -49,8 +49,8 @@ jobs:
           echo "runner reports $actual, job expects ${{ matrix.platform }}"
           test "$actual" = "${{ matrix.platform }}"
 
-      - name: The shipped library matches lib/MANIFEST.txt
-        run: go test -run TestManifestMatchesTheCommittedLibraries -v .
+      - name: The shipped library matches sqlite3/lib/MANIFEST.txt
+        run: go test -run TestManifestMatchesTheCommittedLibraries -v ./sqlite3
 
       - name: Suite, batched read path
         run: go test ./...
@@ -131,7 +131,7 @@ jobs:
   # sqlite3.h, because sqlite-vec's quote-include searches its own directory
   # first, and nothing but a real linux compile would have found that.
   #
-  # It deliberately does not compare hashes against lib/MANIFEST.txt. Two clang
+  # It deliberately does not compare hashes against sqlite3/lib/MANIFEST.txt. Two clang
   # or gcc versions do not emit an identical shared library from identical
   # input, and asserting they do would produce a red build that means nothing.
   # What is asserted is stronger where it matters: the freshly built library
@@ -164,7 +164,7 @@ jobs:
 
       - name: The rebuilt library differs from the committed one only as a compiler differs
         run: |
-          git --no-pager diff --stat -- lib/ || true
+          git --no-pager diff --stat -- sqlite3/lib/ || true
           echo "(a diff here is expected: a different toolchain emits a different binary)"
 
       - name: Suite against the freshly built library
@@ -183,7 +183,7 @@ jobs:
         run: |
           # Not piped into tee: a pipeline would report tee's exit status and
           # hide a failing test behind a successful copy.
-          go test -run 'TestSQLiteVec|TestCompiledExtensionsMatchTheBuild' -v . > /tmp/vec.log 2>&1 || { cat /tmp/vec.log; exit 1; }
+          go test -run 'TestSQLiteVec|TestCompiledExtensionsMatchTheBuild' -v ./sqlite3 > /tmp/vec.log 2>&1 || { cat /tmp/vec.log; exit 1; }
           cat /tmp/vec.log
           if grep -q -- '--- SKIP' /tmp/vec.log; then
             echo "sqlite-vec test skipped, but this job builds with it compiled in"

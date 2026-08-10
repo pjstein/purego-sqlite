@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Compile the pinned SQLite amalgamation into lib/linux_amd64/libsqlite3.so.
+# Compile the pinned SQLite amalgamation into sqlite3/lib/linux_amd64/libsqlite3.so.
 #
 # The linux sibling of build-darwin-arm64.sh: the SETI-readiness note in the
 # bake-off named the linux/amd64 build as the first missing piece, and this is
@@ -24,7 +24,7 @@ source "$here/flags.sh"
 goos=linux
 goarch=amd64
 srcdir="$root/build/upstream/sqlite-amalgamation-${SQLITE_VERSION}"
-outdir="$root/lib/${goos}_${goarch}"
+outdir="$root/sqlite3/lib/${goos}_${goarch}"
 out="$outdir/libsqlite3.so"
 
 test -f "$srcdir/sqlite3.c" || { echo "build: run build/fetch.sh first" >&2; exit 1; }

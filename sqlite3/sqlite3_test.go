@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	sqlite3 "github.com/pjstein/purego-sqlite"
+	"github.com/pjstein/purego-sqlite/sqlite3"
 )
 
 func tempDB(t *testing.T) string {
@@ -38,7 +38,9 @@ func mustExec(t *testing.T, c *sqlite3.Conn, sql string, args ...any) {
 // read from sqlite-version.lock so the pin and the binary cannot drift apart
 // without a test failing.
 func TestShippedLibraryIsThePinnedUpstreamOne(t *testing.T) {
-	lock, err := os.ReadFile("sqlite-version.lock")
+	// The lock lives at the repository root, one level above this package — the build
+	// scripts and the Makefile read it from there, and it must stay in exactly one place.
+	lock, err := os.ReadFile(filepath.Join("..", "sqlite-version.lock"))
 	if err != nil {
 		t.Fatalf("reading sqlite-version.lock: %v", err)
 	}

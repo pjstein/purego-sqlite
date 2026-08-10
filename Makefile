@@ -14,14 +14,14 @@ fetch:
 build: fetch
 	@build/build-$(shell go env GOOS)-$(shell go env GOARCH).sh
 
-## ship-lib: compile the exact configuration committed under lib/ -- which is
+## ship-lib: compile the exact configuration committed under sqlite3/lib/ -- which is
 ## `build` plus sqlite-vec. Use this and not `build` when re-pinning, or the
 ## committed library will quietly lose an extension consumers already have.
 ship-lib: fetch
 	@WITH_SQLITE_VEC=1 build/build-$(shell go env GOOS)-$(shell go env GOARCH).sh
 	@$(MAKE) --no-print-directory manifest
 
-## manifest: rewrite lib/MANIFEST.txt from the libraries actually on disk
+## manifest: rewrite sqlite3/lib/MANIFEST.txt from the libraries actually on disk
 manifest:
 	@build/write-manifest.sh
 
@@ -54,4 +54,4 @@ clean:
 	rm -rf build/upstream
 
 distclean: clean
-	rm -f lib/*/libsqlite3.dylib lib/*/libsqlite3.so
+	rm -f sqlite3/lib/*/libsqlite3.dylib sqlite3/lib/*/libsqlite3.so
