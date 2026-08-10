@@ -34,11 +34,11 @@ func bindRowBatch(h uintptr) {
 	if os.Getenv(BatchEnv) == "0" {
 		return
 	}
-	stepAddr, err := purego.Dlsym(h, "rowbatch_step")
+	stepAddr, err := dlsym(h, "rowbatch_step")
 	if err != nil || stepAddr == 0 {
 		return
 	}
-	sizeAddr, err := purego.Dlsym(h, "rowbatch_col_size")
+	sizeAddr, err := dlsym(h, "rowbatch_col_size")
 	if err != nil || sizeAddr == 0 {
 		return
 	}

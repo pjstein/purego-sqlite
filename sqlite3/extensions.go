@@ -36,11 +36,11 @@ var (
 // at load, before any connection exists, because sqlite3_auto_extension only
 // affects connections opened after it.
 func bindExtensions(h uintptr) {
-	avail, err := purego.Dlsym(h, "sqlite_ext_available")
+	avail, err := dlsym(h, "sqlite_ext_available")
 	if err != nil || avail == 0 {
 		return
 	}
-	reg, err := purego.Dlsym(h, "sqlite_ext_autoregister")
+	reg, err := dlsym(h, "sqlite_ext_autoregister")
 	if err != nil || reg == 0 {
 		return
 	}

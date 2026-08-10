@@ -69,7 +69,7 @@ var (
 
 func bindAggregateFast(h uintptr) {
 	sym := func(name string) uintptr {
-		p, err := purego.Dlsym(h, name)
+		p, err := dlsym(h, name)
 		if err != nil {
 			return 0
 		}

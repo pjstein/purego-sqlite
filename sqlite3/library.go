@@ -70,7 +70,7 @@ func loadLibrary() error {
 		path = p
 	}
 
-	h, err := purego.Dlopen(path, purego.RTLD_NOW|purego.RTLD_GLOBAL)
+	h, err := dlopen(path, rtldNow|rtldGlobal)
 	if err != nil {
 		return fmt.Errorf("purego-sqlite: dlopen %s: %w", path, err)
 	}
@@ -232,7 +232,7 @@ func bindSymbols(h uintptr) (err error) {
 
 	reg := func(fptr any, name string) { purego.RegisterLibFunc(fptr, h, name) }
 	addr := func(name string) uintptr {
-		p, e := purego.Dlsym(h, name)
+		p, e := dlsym(h, name)
 		if e != nil || p == 0 {
 			panic("missing symbol " + name)
 		}
@@ -328,10 +328,10 @@ func bindSymbols(h uintptr) (err error) {
 // A library compiled SQLITE_OMIT_LOAD_EXTENSION does not, and that is a valid
 // configuration rather than an error -- some deployments want exactly that.
 func bindLoadExtension(h uintptr) {
-	if p, err := purego.Dlsym(h, "sqlite3_enable_load_extension"); err == nil && p != 0 {
+	if p, err := dlsym(h, "sqlite3_enable_load_extension"); err == nil && p != 0 {
 		lib.enableLoadExtension = p
 	}
-	if p, err := purego.Dlsym(h, "sqlite3_load_extension"); err == nil && p != 0 {
+	if p, err := dlsym(h, "sqlite3_load_extension"); err == nil && p != 0 {
 		func() {
 			defer func() { recover() }()
 			purego.RegisterFunc(&lib.loadExtension, p)
