@@ -5,8 +5,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/pjstein/purego-sqlite/sqlite3"
 	"github.com/pjstein/purego-sqlite/conformance"
+	"github.com/pjstein/purego-sqlite/sqlite3"
 )
 
 // TestRowBatchingIsActive states which path the rest of the suite just

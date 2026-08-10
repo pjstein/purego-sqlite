@@ -16,8 +16,8 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/pjstein/purego-sqlite/sqlite3"
 	"github.com/pjstein/purego-sqlite/conformance"
+	"github.com/pjstein/purego-sqlite/sqlite3"
 )
 
 func main() {

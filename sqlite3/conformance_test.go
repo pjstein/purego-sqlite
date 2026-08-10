@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/pjstein/purego-sqlite/sqlite3"
 	"github.com/pjstein/purego-sqlite/conformance"
+	"github.com/pjstein/purego-sqlite/sqlite3"
 )
 
 // TestValueRoundTrip stores every corpus value as both TEXT and BLOB and reads

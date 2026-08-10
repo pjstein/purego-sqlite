@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/pjstein/purego-sqlite/sqlite3"
 	"github.com/pjstein/purego-sqlite/conformance"
+	"github.com/pjstein/purego-sqlite/sqlite3"
 )
 
 func TestCreateFunction(t *testing.T) {

@@ -8,9 +8,9 @@ import (
 	"testing"
 
 	"github.com/ebitengine/purego"
-	"github.com/pjstein/purego-sqlite/sqlite3"
 	bakeoff "github.com/pjstein/purego-sqlite/bench"
 	"github.com/pjstein/purego-sqlite/bench/cgoref"
+	"github.com/pjstein/purego-sqlite/sqlite3"
 )
 
 // ---- the null call: what the boundary itself costs ----

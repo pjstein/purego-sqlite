@@ -24,9 +24,9 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/pjstein/purego-sqlite/sqlite3"
 	bakeoff "github.com/pjstein/purego-sqlite/bench"
 	"github.com/pjstein/purego-sqlite/conformance"
+	"github.com/pjstein/purego-sqlite/sqlite3"
 )
 
 var (
