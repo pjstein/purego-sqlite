@@ -1,5 +1,5 @@
 {
-  "invocation": "/Users/pjstein/source/pjstein/purego-sqlite/bench/bin/bakeoff -duration 30s -warmup 3s -rounds 8 -readers 8 -seed 200000 -writerate 2000 -quietwait 3m -json /Users/pjstein/source/pjstein/purego-sqlite/bench/results/contended-fixed-2000-quiet.json",
+  "invocation": "<repo>/bench/bin/bakeoff -duration 30s -warmup 3s -rounds 8 -readers 8 -seed 200000 -writerate 2000 -quietwait 3m -json <repo>/bench/results/contended-fixed-2000-quiet.json",
   "row_batching_active": true,
   "machine": {
     "batch env": "PUREGO_SQLITE_BATCH=\"\"",
@@ -11,7 +11,7 @@
     "pinned sourceid": "2026-07-24 19:02:57 bf7c7f30031888f4e796e429ab3978879485813aaca6f641c7b33e4e09459bcc",
     "pinned sqlite": "3.53.4",
     "row batching": "true",
-    "shipped library": "/Users/pjstein/Library/Caches/purego-sqlite/f2cb875b1f15e8ae/libsqlite3.dylib"
+    "shipped library": "<cache>/purego-sqlite/f2cb875b1f15e8ae/libsqlite3.dylib"
   },
   "config": {
     "append_sql": "INSERT INTO events (stream, kind, ts, payload) VALUES (?, ?, ?, ?)",

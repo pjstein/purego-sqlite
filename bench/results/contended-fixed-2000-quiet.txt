@@ -1,7 +1,7 @@
-# raw output of: /Users/pjstein/source/pjstein/purego-sqlite/bench/bin/bakeoff -duration 30s -warmup 3s -rounds 8 -readers 8 -seed 200000 -writerate 2000 -quietwait 3m -json /Users/pjstein/source/pjstein/purego-sqlite/bench/results/contended-fixed-2000-quiet.json
+# raw output of: <repo>/bench/bin/bakeoff -duration 30s -warmup 3s -rounds 8 -readers 8 -seed 200000 -writerate 2000 -quietwait 3m -json <repo>/bench/results/contended-fixed-2000-quiet.json
 # written 2026-08-09T02:00:36Z
-# context: run during a deliberately quiet window -- the owner paused the
-#          backup daemon and the executor lane held its builds. This is the
+# context: run during a deliberately quiet window -- the machine's backup
+#          daemon was paused and no other builds were running. This is the
 #          only measurement of the contended workload not taken through
 #          background load, and it exists to settle the one comparison the
 #          contended runs could not resolve.
@@ -16,7 +16,7 @@
   8.8 claude
 
 == invocation (re-run this verbatim to reproduce)
-   PUREGO_SQLITE_BATCH="" /Users/pjstein/source/pjstein/purego-sqlite/bench/bin/bakeoff -duration 30s -warmup 3s -rounds 8 -readers 8 -seed 200000 -writerate 2000 -quietwait 3m -json /Users/pjstein/source/pjstein/purego-sqlite/bench/results/contended-fixed-2000-quiet.json
+   PUREGO_SQLITE_BATCH="" <repo>/bench/bin/bakeoff -duration 30s -warmup 3s -rounds 8 -readers 8 -seed 200000 -writerate 2000 -quietwait 3m -json <repo>/bench/results/contended-fixed-2000-quiet.json
    row batching in this process: true
 
 == machine and toolchain
@@ -29,7 +29,7 @@
    pinned sourceid    2026-07-24 19:02:57 bf7c7f30031888f4e796e429ab3978879485813aaca6f641c7b33e4e09459bcc
    pinned sqlite      3.53.4
    row batching       true
-   shipped library    /Users/pjstein/Library/Caches/purego-sqlite/f2cb875b1f15e8ae/libsqlite3.dylib
+   shipped library    <cache>/purego-sqlite/f2cb875b1f15e8ae/libsqlite3.dylib
 
 == 4 drivers under test, interleaved with a rotating order: every round runs each once, and each driver takes every slot across rounds
    1. purego-sqlite (native)
@@ -374,6 +374,6 @@
    ncruces/go-sqlite3 (database/sql)       2000+/-1        10221+/-1235      10787+/-1325      452+/-79  
    modernc.org/sqlite (database/sql)       2000+/-1         3776+/-591        3816+/-586      2622+/-649 
 
-wrote /Users/pjstein/source/pjstein/purego-sqlite/bench/results/contended-fixed-2000-quiet.json
+wrote <repo>/bench/results/contended-fixed-2000-quiet.json
 
 # machine at end: load { 13.41 12.32 12.04 }

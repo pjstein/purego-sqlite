@@ -1,8 +1,8 @@
-# raw output of: /Users/pjstein/source/pjstein/purego-sqlite/bench/bin/bakeoff -duration 30s -warmup 3s -rounds 4 -readers 8 -seed 200000 -writerate 0
+# raw output of: <repo>/bench/bin/bakeoff -duration 30s -warmup 3s -rounds 4 -readers 8 -seed 200000 -writerate 0
 # written 2026-08-09T01:35:58Z
 
 == invocation (re-run this verbatim to reproduce)
-   PUREGO_SQLITE_BATCH="" /Users/pjstein/source/pjstein/purego-sqlite/bench/bin/bakeoff -duration 30s -warmup 3s -rounds 4 -readers 8 -seed 200000 -writerate 0 -json /Users/pjstein/source/pjstein/purego-sqlite/bench/results/contended-unthrottled.json
+   PUREGO_SQLITE_BATCH="" <repo>/bench/bin/bakeoff -duration 30s -warmup 3s -rounds 4 -readers 8 -seed 200000 -writerate 0 -json <repo>/bench/results/contended-unthrottled.json
    row batching in this process: true
 
 == machine and toolchain
@@ -15,7 +15,7 @@
    pinned sourceid    2026-07-24 19:02:57 bf7c7f30031888f4e796e429ab3978879485813aaca6f641c7b33e4e09459bcc
    pinned sqlite      3.53.4
    row batching       true
-   shipped library    /Users/pjstein/Library/Caches/purego-sqlite/f2cb875b1f15e8ae/libsqlite3.dylib
+   shipped library    <cache>/purego-sqlite/f2cb875b1f15e8ae/libsqlite3.dylib
 
 == 4 drivers under test, interleaved with a rotating order: every round runs each once, and each driver takes every slot across rounds
    1. purego-sqlite (native)
@@ -222,4 +222,4 @@
    ncruces/go-sqlite3 (database/sql)       5331+/-664       8744+/-657        9300+/-727       477+/-83  
    modernc.org/sqlite (database/sql)      10141+/-1846      3721+/-299        3758+/-275      1967+/-151 
 
-wrote /Users/pjstein/source/pjstein/purego-sqlite/bench/results/contended-unthrottled.json
+wrote <repo>/bench/results/contended-unthrottled.json

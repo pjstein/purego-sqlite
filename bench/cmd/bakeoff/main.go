@@ -209,8 +209,8 @@ func main() {
 	for round := 1; round <= *rounds; round++ {
 		// Re-check between rounds, not just once before the first. The
 		// pre-flight gate can admit a quiet machine that goes hot ten minutes
-		// later, and a round measured through a Spotlight reindex or another
-		// lane's test suite is noise wearing the shape of a result. Waiting
+		// later, and a round measured through a Spotlight reindex or someone
+		// else's test suite is noise wearing the shape of a result. Waiting
 		// here costs minutes; not waiting costs the ability to tell a 10%
 		// difference from a 25% spread.
 		if waited := bakeoff.WaitForQuiet(*quietWait); waited > 0 {

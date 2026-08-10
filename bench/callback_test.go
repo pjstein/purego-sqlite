@@ -124,7 +124,7 @@ func BenchmarkSQLFunction(b *testing.B) {
 		})
 	}
 
-	// Rung 3, and the combination question the owner raised: the aggregate
+	// Rung 3, and the combination question this ladder exists to answer: the aggregate
 	// path has its own C trampoline and its own dispatch table, so whether the
 	// scalar path underneath it is marshaled or portable should not matter.
 	// Measured in both processes rather than reasoned about.

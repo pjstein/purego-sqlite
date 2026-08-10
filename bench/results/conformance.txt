@@ -22,7 +22,7 @@
 === RUN   TestWorkloadShapeIsIdentical
 --- PASS: TestWorkloadShapeIsIdentical (0.06s)
 === RUN   TestFFISetupReportsWhatItMeasured
-FFI comparison drives /Users/pjstein/Library/Caches/purego-sqlite/f2cb875b1f15e8ae/libsqlite3.dylib (SQLite 3.53.4) through both purego and cgo
+FFI comparison drives <cache>/purego-sqlite/f2cb875b1f15e8ae/libsqlite3.dylib (SQLite 3.53.4) through both purego and cgo
 --- PASS: TestFFISetupReportsWhatItMeasured (0.00s)
 PASS
 ok  	github.com/pjstein/purego-sqlite/bench	0.436s

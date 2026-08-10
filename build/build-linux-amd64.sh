@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 # Compile the pinned SQLite amalgamation into sqlite3/lib/linux_amd64/libsqlite3.so.
 #
-# The linux sibling of build-darwin-arm64.sh: the SETI-readiness note in the
-# bake-off named the linux/amd64 build as the first missing piece, and this is
-# it. Same flags.sh, same amalgamation, same shim and optional extensions --
+# The linux sibling of build-darwin-arm64.sh. The bake-off shipped darwin/arm64
+# first and named the missing linux/amd64 build as the largest gap between this
+# binding and a general-purpose one; this is it. Same flags.sh, same
+# amalgamation, same shim and optional extensions --
 # only the four things that are genuinely platform-specific differ, and each is
 # marked below so the two scripts can be read against each other:
 #

@@ -13,8 +13,8 @@ cmd=("$here/bin/bakeoff" -duration 30s -warmup 3s -rounds "$ROUNDS" -readers 8 -
 {
   echo "# raw output of: ${cmd[*]} -json $js"
   echo "# written $(date -u +%Y-%m-%dT%H:%M:%SZ)"
-  echo "# context: run during a deliberately quiet window -- the owner paused the"
-  echo "#          backup daemon and the executor lane held its builds. This is the"
+  echo "# context: run during a deliberately quiet window -- the machine's backup"
+  echo "#          daemon was paused and no other builds were running. This is the"
   echo "#          only measurement of the contended workload not taken through"
   echo "#          background load, and it exists to settle the one comparison the"
   echo "#          contended runs could not resolve."

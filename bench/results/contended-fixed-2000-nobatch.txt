@@ -1,8 +1,8 @@
-# raw output of: PUREGO_SQLITE_BATCH=0 /Users/pjstein/source/pjstein/purego-sqlite/bench/bin/bakeoff -duration 30s -warmup 3s -rounds 5 -readers 8 -seed 200000 -writerate 2000 -only purego
+# raw output of: PUREGO_SQLITE_BATCH=0 <repo>/bench/bin/bakeoff -duration 30s -warmup 3s -rounds 5 -readers 8 -seed 200000 -writerate 2000 -only purego
 # written 2026-08-09T01:52:00Z
 
 == invocation (re-run this verbatim to reproduce)
-   PUREGO_SQLITE_BATCH="0" /Users/pjstein/source/pjstein/purego-sqlite/bench/bin/bakeoff -duration 30s -warmup 3s -rounds 5 -readers 8 -seed 200000 -writerate 2000 -only purego -json /Users/pjstein/source/pjstein/purego-sqlite/bench/results/contended-fixed-2000-nobatch.json
+   PUREGO_SQLITE_BATCH="0" <repo>/bench/bin/bakeoff -duration 30s -warmup 3s -rounds 5 -readers 8 -seed 200000 -writerate 2000 -only purego -json <repo>/bench/results/contended-fixed-2000-nobatch.json
    row batching in this process: false
 
 == machine and toolchain
@@ -15,7 +15,7 @@
    pinned sourceid    2026-07-24 19:02:57 bf7c7f30031888f4e796e429ab3978879485813aaca6f641c7b33e4e09459bcc
    pinned sqlite      3.53.4
    row batching       false
-   shipped library    /Users/pjstein/Library/Caches/purego-sqlite/f2cb875b1f15e8ae/libsqlite3.dylib
+   shipped library    <cache>/purego-sqlite/f2cb875b1f15e8ae/libsqlite3.dylib
 
 == 1 drivers under test, interleaved with a rotating order: every round runs each once, and each driver takes every slot across rounds
    1. purego-sqlite (native)
@@ -105,4 +105,4 @@
    driver                                    appends/s      min polls/s      med polls/s       p99 us
    purego-sqlite (native)                  2000+/-0         4505+/-23         5403+/-153       667+/-8   
 
-wrote /Users/pjstein/source/pjstein/purego-sqlite/bench/results/contended-fixed-2000-nobatch.json
+wrote <repo>/bench/results/contended-fixed-2000-nobatch.json
