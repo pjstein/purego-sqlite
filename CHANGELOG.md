@@ -4,7 +4,7 @@ Notable changes per release. Dates are ISO-8601. This project follows
 [semantic versioning](https://semver.org/) with the pre-1.0 caveat that minor
 versions may break the API; see [API stability](README.md#api-stability).
 
-## v0.1.0 — unreleased
+## v0.1.0 — 2026-08-10
 
 First public release. Below is a deliberately blunt account of what is proven
 and what is not, because a 0.1.0 that oversells itself costs more than one that
